@@ -1,0 +1,18 @@
+/* Small, simple styles to improve spacing/layout without over-designing. */
+
+body {
+  background: #fafafa;
+}
+
+.col-actions {
+  width: 170px;
+}
+
+.stat-card .display-6 {
+  font-size: 1.75rem;
+}
+
+code {
+  word-break: break-word;
+}
+

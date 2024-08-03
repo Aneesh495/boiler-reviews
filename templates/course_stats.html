@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Course Statistics · BoilerCourse Reviews{% endblock %}
+
+{% block content %}
+  <h2 class="mb-1">Course Statistics</h2>
+  <p class="text-muted mb-4">
+    Per-course aggregates from the <code>course_stats</code> table. They are recomputed in the same database
+    transaction as each review insert, update, or delete so the numbers stay consistent with
+    <code>reviews</code>.
+  </p>
+
+  <div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Course</th>
+          <th class="text-end">Reviews</th>
+          <th class="text-end">Avg overall</th>
+          <th class="text-end">Avg difficulty</th>
+          <th class="text-end">Avg workload (hrs)</th>
+          <th class="text-end">Recommend</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            <td>
+              <div><strong>{{ r.course_code }}</strong></div>
+              <div class="text-muted small">{{ r.course_name }}</div>
+            </td>
+            <td class="text-end">{{ r.review_count }}</td>
+            <td class="text-end">{{ "%.2f"|format(r.avg_overall) }}</td>
+            <td class="text-end">{{ "%.2f"|format(r.avg_difficulty) }}</td>
+            <td class="text-end">{{ "%.2f"|format(r.avg_workload) }}</td>
+            <td class="text-end">
+              {% if r.review_count > 0 %}
+                {{ r.recommend_count }} /
+                {{ r.review_count }}
+                <span class="text-muted small">
+                  ({{ "%.0f"|format((r.recommend_count / r.review_count) * 100) }}%)
+                </span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

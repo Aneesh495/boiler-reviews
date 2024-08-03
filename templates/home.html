@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Home · BoilerCourse Reviews{% endblock %}
+
+{% block content %}
+  <div class="p-4 p-md-5 mb-4 bg-light rounded-3">
+    <div class="container-fluid py-2">
+      <h1 class="display-6 mb-2">BoilerCourse Reviews</h1>
+      <p class="lead mb-4">
+        Create, edit, and browse course reviews. Generate a filtered report with helpful statistics.
+      </p>
+      <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-primary" href="{{ url_for('reviews_list') }}">Manage Reviews</a>
+        <a class="btn btn-outline-primary" href="{{ url_for('report') }}">Generate Report</a>
+        <a class="btn btn-outline-secondary" href="{{ url_for('course_stats') }}">Course Statistics</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Manage Reviews</h5>
+          <p class="card-text">
+            Insert, update, and delete review rows in the database-backed <code>reviews</code> table.
+          </p>
+          <a class="btn btn-sm btn-primary" href="{{ url_for('reviews_list') }}">Go to Reviews</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Report</h5>
+          <p class="card-text">
+            Filter reviews by course/semester/min rating/recommendation and see computed statistics.
+          </p>
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('report') }}">Go to Report</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Course Statistics</h5>
+          <p class="card-text">
+            See stored per-course averages and recommendation counts kept in sync via database transactions.
+          </p>
+          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('course_stats') }}">View statistics</a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
