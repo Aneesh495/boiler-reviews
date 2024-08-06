@@ -6,7 +6,7 @@ SQLite may use an index for some queries and fall back to table scans depending 
 
 ---
 
-## `idx_reviews_course_id` — `CREATE INDEX ... ON reviews(course_id)`
+## `idx_reviews_course_id`  -  `CREATE INDEX ... ON reviews(course_id)`
 
 | | |
 |--|--|
@@ -17,7 +17,7 @@ SQLite may use an index for some queries and fall back to table scans depending 
 
 ---
 
-## `idx_reviews_semester_id` — `ON reviews(semester_id)`
+## `idx_reviews_semester_id`  -  `ON reviews(semester_id)`
 
 | | |
 |--|--|
@@ -28,7 +28,7 @@ SQLite may use an index for some queries and fall back to table scans depending 
 
 ---
 
-## `idx_reviews_overall_rating` — `ON reviews(overall_rating)`
+## `idx_reviews_overall_rating`  -  `ON reviews(overall_rating)`
 
 | | |
 |--|--|
@@ -39,7 +39,7 @@ SQLite may use an index for some queries and fall back to table scans depending 
 
 ---
 
-## `idx_reviews_would_recommend` — `ON reviews(would_recommend)`
+## `idx_reviews_would_recommend`  -  `ON reviews(would_recommend)`
 
 | | |
 |--|--|
@@ -50,7 +50,7 @@ SQLite may use an index for some queries and fall back to table scans depending 
 
 ---
 
-## `idx_reviews_course_semester_overall` — `ON reviews(course_id, semester_id, overall_rating)`
+## `idx_reviews_course_semester_overall`  -  `ON reviews(course_id, semester_id, overall_rating)`
 
 | | |
 |--|--|
@@ -61,7 +61,7 @@ SQLite may use an index for some queries and fall back to table scans depending 
 
 ---
 
-## `idx_semesters_term_year` — `ON semesters(term, year)`
+## `idx_semesters_term_year`  -  `ON semesters(term, year)`
 
 | | |
 |--|--|
@@ -72,7 +72,7 @@ SQLite may use an index for some queries and fall back to table scans depending 
 
 ---
 
-## `courses(course_code)` — unique constraint (built-in index)
+## `courses(course_code)`  -  unique constraint (built-in index)
 
 | | |
 |--|--|

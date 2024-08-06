@@ -117,7 +117,7 @@ def create_review_transaction(
     conn.execute("BEGIN IMMEDIATE;")
     try:
         # Parameterized INSERT: user fields are always passed as parameters, never
-        # concatenated into SQL strings — the main defense against SQL injection.
+        # concatenated into SQL strings  -  the main defense against SQL injection.
         conn.execute(
             """
             INSERT INTO reviews (
@@ -170,7 +170,7 @@ def update_review_transaction(
     """
     conn.execute("BEGIN IMMEDIATE;")
     try:
-        # Parameterized SELECT — review id comes from the URL but still uses `?`.
+        # Parameterized SELECT  -  review id comes from the URL but still uses `?`.
         prev = conn.execute(
             "SELECT course_id FROM reviews WHERE id = ?;",
             (review_id,),
@@ -270,7 +270,7 @@ def parse_int(value: str | None) -> int | None:
     Convert a form/query value to int if present; otherwise return None.
 
     Invalid numbers (e.g. "abc") return None so we can show a validation error
-    instead of crashing — part of basic server-side validation (Stage 3).
+    instead of crashing  -  part of basic server-side validation (Stage 3).
     """
     if value is None:
         return None
@@ -360,7 +360,7 @@ def reviews_list():
     """
     List all reviews in a joined table so users see readable course/semester names.
 
-    Every JOIN/WHERE value is fixed SQL; only structure is static — no user
+    Every JOIN/WHERE value is fixed SQL; only structure is static  -  no user
     string concatenation into the query (SQL injection is not introduced here).
     """
     conn = get_db_connection()
@@ -393,7 +393,7 @@ def review_new():
     """
     Create a new review.
 
-    Stage 3 — SQL injection:
+    Stage 3  -  SQL injection:
       All writes use `?` placeholders with a separate parameter tuple/list.
       Even if a user typed quotes or SQL keywords into professor/comment,
       sqlite3 sends those as *data*, not as executable SQL.
@@ -637,9 +637,9 @@ def report():
     """
     Report page with optional filters + computed statistics.
 
-    Stage 3 — SQL injection:
+    Stage 3  -  SQL injection:
       The WHERE clause *template* is built from fixed strings like `r.course_id = ?`.
-      Only bind parameters (`params`) carry user-chosen values — never f-strings
+      Only bind parameters (`params`) carry user-chosen values  -  never f-strings
       that splice raw user text into SQL. That pattern keeps filtering safe.
     """
     dropdowns = fetch_dropdown_data()

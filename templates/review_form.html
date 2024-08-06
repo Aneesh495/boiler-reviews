@@ -34,7 +34,7 @@
               value="{{ c.id }}"
               {% if form_data.get('course_id','')|string == c.id|string %}selected{% endif %}
             >
-              {{ c.course_code }} — {{ c.course_name }}
+              {{ c.course_code }}  -  {{ c.course_name }}
             </option>
           {% endfor %}
         </select>
@@ -68,7 +68,7 @@
       </div>
 
       <div class="col-md-2">
-        <label class="form-label">Difficulty (1–5)</label>
+        <label class="form-label">Difficulty (1-5)</label>
         <input
           type="number"
           name="difficulty_rating"
@@ -93,7 +93,7 @@
       </div>
 
       <div class="col-md-2">
-        <label class="form-label">Overall (1–5)</label>
+        <label class="form-label">Overall (1-5)</label>
         <input
           type="number"
           name="overall_rating"
