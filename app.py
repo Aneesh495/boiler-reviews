@@ -248,7 +248,7 @@ def fetch_dropdown_data() -> dict[str, list[sqlite3.Row]]:
     """
     Load dropdown options from the database (NOT hardcoded).
 
-    This helps satisfy the assignment requirement that at least one UI dropdown
+    Course picker dropdown for filtering reviews by catalog entry.
     is populated dynamically from database rows.
 
     Uses parameterized queries only where user input exists (report route);

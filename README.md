@@ -68,7 +68,7 @@ Then open `http://127.0.0.1:5001/`.
 
 Additional **server-side validation** trims professor/comment text, rejects non-numeric input where integers are required, and enforces rating ranges (see `collect_review_errors` in `app.py`).
 
-More demo wording: `STAGE3_NOTES.md`. Index and transaction narratives: `INDEX_NOTES.md`, `TRANSACTIONS_NOTES.md`. AI: `AI_USAGE.md`.
+Implementation notes: `INDEX_NOTES.md`, `TRANSACTIONS_NOTES.md`.
 
 ## Assignment Requirements Summary
 
