@@ -24,18 +24,27 @@ erDiagram
     string course_code UK
     string course_name
   }
+  semesters {
+    int id PK
+    string term
+    int year
+  }
   reviews {
     int id PK
     int course_id FK
     int semester_id FK
-    int ratings...
+    int overall_rating
+    int would_recommend
   }
   course_stats {
-    int course_id PK FK
+    int course_id PK
     int review_count
-    float avg_overall...
+    float avg_overall
+    float avg_difficulty
   }
 ```
+
+`course_stats.course_id` is primary key and foreign key to `courses.id` (1:1 aggregate row per course).
 
 Review mutations run inside explicit transactions; `course_stats` is refreshed in the **same unit of work** as the insert/update/delete (see `TRANSACTIONS_NOTES.md`).
 
