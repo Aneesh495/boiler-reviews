@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Local runtime and secrets
+.env
+.env.*
+!.env.example
+.runtime/
+instance/
+*.sqlite
+*.sqlite3
+course_reviews.db
+
+# Build outputs
+client/build/
+client/dist/
+client/.cache/
+
+# Evidence is reproducible; only checked-in small fixtures and reports belong in Git.
+evidence/raw/
+evidence/benchmarks/
+evidence/recovery/
+evidence/screenshots/
