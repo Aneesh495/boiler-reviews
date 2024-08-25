@@ -2,11 +2,13 @@ PYTHON ?= venv/bin/python
 PIP ?= venv/bin/pip
 DATABASE_URL ?= sqlite:///instance/boiler_reviews.sqlite3
 export DATABASE_URL
+export PYTHONPATH := src
 
 .PHONY: bootstrap dev demo test test-integration test-e2e test-solver migrate-legacy-dry-run benchmark acceptance verify census
 
 bootstrap:
 	@test -x "$(PYTHON)" || (python3 -m venv venv && venv/bin/pip install -r requirements.txt)
+	@$(PIP) install -e .
 	@mkdir -p instance evidence docs/generated
 	@test -f .env || cp .env.example .env
 	@$(PYTHON) -m boiler_reviews.db.migrate upgrade
