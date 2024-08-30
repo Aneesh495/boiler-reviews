@@ -206,7 +206,7 @@ def _transition(session: Session, review: Review, *, actor_id: str, target: str,
     )
     session.add(
         OutboxEvent(
-            event_key=f"review:{review.id}:status:{review.updated_at.isoformat() if review.updated_at else review.current_revision}",
+            event_key=f"review:{review.id}:revision:{review.current_revision}:state:{target}",
             event_type="review.status_changed",
             payload_json={"review_id": review.id, "from": old_status, "to": target},
         )

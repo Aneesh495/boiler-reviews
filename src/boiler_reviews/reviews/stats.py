@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from boiler_reviews.db.models import CourseAggregate, Review, ReviewRevision
@@ -16,6 +16,17 @@ class RatingSummary:
     lower: float | None
     upper: float | None
     warning: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class CourseStatistics:
+    review_count: int
+    overall: RatingSummary
+    difficulty: RatingSummary
+    workload_mean_hours: float | None
+    workload_quantiles_hours: dict[str, float] | None
+    recommend_rate: float | None
+    comparison_warning: str | None
 
 
 def adjust_aggregate(
@@ -53,12 +64,12 @@ def remove_empty_aggregate(session: Session, aggregate: CourseAggregate) -> None
 
 
 def full_recompute(session: Session) -> dict[tuple[str, str], dict[str, int]]:
-    """Authoritative scan of published revisions, used only by repair/reconciliation."""
+    """Authoritative scan of public approved revisions, used by reconciliation."""
     values: dict[tuple[str, str], dict[str, int]] = {}
     rows = session.execute(
         select(Review, ReviewRevision)
         .join(ReviewRevision, (ReviewRevision.review_id == Review.id) & (ReviewRevision.revision == Review.published_revision))
-        .where(Review.status == "published")
+        .where(Review.status.in_(["published", "submitted"]), Review.published_revision.is_not(None))
     )
     for review, revision in rows:
         key = (review.course_id, review.term_id)
@@ -111,8 +122,41 @@ def rating_summary(count: int, total: int, *, prior_mean: float = 3.5, prior_str
     if count == 0:
         return RatingSummary(0, None, None, None, "No published review evidence")
     mean = (total + prior_strength * prior_mean) / (count + prior_strength)
-    # Wilson-style uncertainty around a normalized 1..5 rating. This is an
-    # explicit decision aid, not a claim of a population-level difference.
     variance = 1.0 / max(count + prior_strength, 1)
     margin = 1.96 * math.sqrt(variance)
     return RatingSummary(count, mean, max(1.0, mean - margin), min(5.0, mean + margin), None if count >= 8 else "Small sample")
+
+
+def _quantile(values: list[int], fraction: float) -> float:
+    ordered = sorted(values)
+    if len(ordered) == 1:
+        return float(ordered[0])
+    position = (len(ordered) - 1) * fraction
+    low, high = math.floor(position), math.ceil(position)
+    if low == high:
+        return float(ordered[low])
+    return ordered[low] + (ordered[high] - ordered[low]) * (position - low)
+
+
+def course_statistics(session: Session, *, course_id: str, term_id: str | None = None) -> CourseStatistics:
+    statement = (
+        select(ReviewRevision)
+        .join(Review, ReviewRevision.review_id == Review.id)
+        .where(Review.course_id == course_id, Review.status.in_(["published", "submitted"]), ReviewRevision.revision == Review.published_revision)
+    )
+    if term_id:
+        statement = statement.where(Review.term_id == term_id)
+    revisions = session.scalars(statement).all()
+    count = len(revisions)
+    overall = rating_summary(count, sum(item.overall for item in revisions))
+    difficulty = rating_summary(count, sum(item.difficulty for item in revisions), prior_mean=3.0)
+    workloads = [item.workload_hours for item in revisions]
+    return CourseStatistics(
+        review_count=count,
+        overall=overall,
+        difficulty=difficulty,
+        workload_mean_hours=sum(workloads) / count if count else None,
+        workload_quantiles_hours={"p25": _quantile(workloads, .25), "p50": _quantile(workloads, .5), "p75": _quantile(workloads, .75)} if workloads else None,
+        recommend_rate=sum(int(item.would_recommend) for item in revisions) / count if count else None,
+        comparison_warning=None if count >= 8 else "Small sample; do not infer a statistical difference from overlapping intervals.",
+    )

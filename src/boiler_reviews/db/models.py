@@ -320,6 +320,7 @@ class DurableTask(Timestamped, Base):
     result_json: Mapped[dict[str, Any] | None] = mapped_column(JSON)
     error_json: Mapped[dict[str, Any] | None] = mapped_column(JSON)
     progress: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     lease_owner: Mapped[str | None] = mapped_column(String(120))
     lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     fencing_token: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

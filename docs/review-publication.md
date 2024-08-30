@@ -1,0 +1,9 @@
+# Review publication and statistics contract
+
+A review has an owner, a course/term identity, a state, and immutable numbered revisions. Owners may edit their own records with an optimistic revision token. Editing a published review creates a pending revision and leaves `published_revision` unchanged; the prior approved content remains public while the new revision is in moderation. A hidden, rejected, or withdrawn review is not public.
+
+The only states accepted by the publication transition matrix are `draft → submitted`, `submitted → published|rejected|withdrawn`, `published → hidden|withdrawn|submitted`, `hidden → published|withdrawn`, and `rejected → draft|submitted|withdrawn`. Moderation decisions and ownership failures are audited. Local demo accounts are synthetic; the system does not claim enrollment or institutional identity.
+
+For each published revision transition, the review row, revision pointer, aggregate delta, audit event, and outbox event commit in one database transaction. Aggregates store counts and sufficient sums by course and term. A pending edit continues to use the old approved revision for public statistics. `full_recompute` scans the authoritative approved revision pointers and `reconcile` reports drift; repair is an explicit operator action with an audit event. No cache is authoritative.
+
+Ratings use a 1–5 scale and workload is self-reported hours/week. Zero eligible reviews is missing evidence, never a zero rating. Sparse rating summaries shrink toward a documented 3.5 prior with strength 8 and show an uncertainty interval plus a small-sample warning. Workload p25/p50/p75 values are computed over eligible published observations. Ranking separates feasibility from preference scoring and returns factor contributions; it cannot make an academically infeasible course appear eligible.

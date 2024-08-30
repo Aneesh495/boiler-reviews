@@ -19,8 +19,10 @@ from boiler_reviews.db.migrate import upgrade
 from boiler_reviews.db.models import Account, Course, CourseAggregate, Review, ReviewRevision, Term
 from boiler_reviews.db.session import build_engine, build_session_factory, session_scope
 from boiler_reviews.identity.service import authenticate, register_account, to_authenticated
+from boiler_reviews.reviews.moderation import moderation_queue, report_review, vote_helpful
+from boiler_reviews.reviews.ranking import CourseCandidate, RankingPreferences, rank_courses
 from boiler_reviews.reviews.service import ReviewInput, create_review, edit_review, moderate_review, submit_review
-from boiler_reviews.reviews.stats import rating_summary, reconcile
+from boiler_reviews.reviews.stats import course_statistics, rating_summary, reconcile
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -223,6 +225,55 @@ def create_app(settings: Settings | None = None) -> Flask:
             revision = session_db.scalar(select(ReviewRevision).where(ReviewRevision.review_id == review.id, ReviewRevision.revision == review.current_revision))
             return jsonify(_review_payload(review, revision))
 
+    @app.get("/api/v1/courses/<course_id>/statistics")
+    def course_statistics_endpoint(course_id: str) -> Any:
+        with session_scope(factory) as session_db:
+            if session_db.get(Course, course_id) is None:
+                raise NotFoundError("Course not found.")
+            statistics = course_statistics(session_db, course_id=course_id, term_id=request.args.get("term_id"))
+            return jsonify(_statistics_payload(statistics))
+
+    @app.get("/api/v1/rankings")
+    def rankings_endpoint() -> Any:
+        preferences = RankingPreferences(
+            workload_tolerance_hours=float(request.args.get("workload_tolerance_hours", "10")),
+            evidence_weight=float(request.args.get("evidence_weight", ".25")),
+            workload_weight=float(request.args.get("workload_weight", ".25")),
+            degree_progress_weight=float(request.args.get("degree_progress_weight", ".25")),
+            preference_weight=float(request.args.get("preference_weight", ".25")),
+        )
+        with session_scope(factory) as session_db:
+            candidates: list[CourseCandidate] = []
+            for course in session_db.scalars(select(Course).order_by(Course.stable_code)).all():
+                statistics = course_statistics(session_db, course_id=course.id)
+                candidates.append(CourseCandidate(course.id, course.stable_code, course.canonical_title, True, statistics.overall.mean, statistics.review_count, statistics.workload_mean_hours, 0.0, 0.0))
+            return jsonify({"items": [_ranked_payload(item) for item in rank_courses(candidates, preferences)], "assumptions": {"academic_feasibility": "caller must validate prerequisites and availability before ranking", "preferences": preferences.__dict__ if hasattr(preferences, "__dict__") else {"workload_tolerance_hours": preferences.workload_tolerance_hours, "evidence_weight": preferences.evidence_weight, "workload_weight": preferences.workload_weight, "degree_progress_weight": preferences.degree_progress_weight, "preference_weight": preferences.preference_weight}}})
+
+    @app.post("/api/v1/reviews/<review_id>/helpful")
+    @require_account
+    def helpful_vote_endpoint(review_id: str) -> Any:
+        body = json_body()
+        with session_scope(factory) as session_db:
+            vote = vote_helpful(session_db, account_id=g.account_id, review_id=review_id, helpful=bool(body.get("helpful", True)))
+            return jsonify({"review_id": vote.review_id, "helpful": vote.helpful})
+
+    @app.post("/api/v1/reviews/<review_id>/report")
+    @require_account
+    def report_review_endpoint(review_id: str) -> Any:
+        body = json_body()
+        with session_scope(factory) as session_db:
+            report = report_review(session_db, account_id=g.account_id, review_id=review_id, reason=str(body.get("reason", "")))
+            return jsonify({"report_id": report.id, "review_id": report.review_id, "status": report.status}), 201
+
+    @app.get("/api/v1/moderation/queue")
+    @require_account
+    def moderation_queue_endpoint() -> Any:
+        with session_scope(factory) as session_db:
+            account = session_db.get(Account, g.account_id)
+            if account is None or "moderator" not in set(account.roles_json):
+                raise PermissionDenied("The moderator role is required.")
+            return jsonify({"items": [{"review_id": review.id, "revision": revision, "open_reports": reports} for review, revision, reports in moderation_queue(session_db)]})
+
     @app.post("/api/v1/moderation/reviews/<review_id>")
     @require_account
     def moderate_review_endpoint(review_id: str) -> Any:
@@ -245,6 +296,21 @@ def create_app(settings: Settings | None = None) -> Flask:
         return render_template("dashboard.html")
 
     return app
+
+
+def _statistics_payload(statistics: Any) -> dict[str, Any]:
+    return {
+        "review_count": statistics.review_count,
+        "overall": {"count": statistics.overall.count, "mean": statistics.overall.mean, "lower": statistics.overall.lower, "upper": statistics.overall.upper, "warning": statistics.overall.warning},
+        "difficulty": {"count": statistics.difficulty.count, "mean": statistics.difficulty.mean, "lower": statistics.difficulty.lower, "upper": statistics.difficulty.upper, "warning": statistics.difficulty.warning},
+        "workload": {"mean_hours_per_week": statistics.workload_mean_hours, "quantiles_hours_per_week": statistics.workload_quantiles_hours},
+        "recommend_rate": statistics.recommend_rate,
+        "comparison_warning": statistics.comparison_warning,
+    }
+
+
+def _ranked_payload(ranked: Any) -> dict[str, Any]:
+    return {"course": {"id": ranked.candidate.course_id, "code": ranked.candidate.code, "title": ranked.candidate.title}, "score": ranked.score, "factors": ranked.factors, "explanation": ranked.explanation, "review_count": ranked.candidate.review_count}
 
 
 def _account_payload(account: Account) -> dict[str, Any]:
