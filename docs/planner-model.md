@@ -1,0 +1,9 @@
+# Degree audit and planner model
+
+Degree rules are stored with a catalog snapshot and represented as versioned requirement groups. Each group declares eligible course identities, minimum course/credit totals, whether double counting is explicitly allowed, and whether the institutional rule is unresolved. The audit allocates completed and proposed courses to groups without silently using one course for multiple groups. A future course is `pending`, never already passed. Transfer evidence keeps source and grade assumptions attached to the completed-course record.
+
+The planner uses fixed-point credit units: one catalog credit is 1,000 internal units. Every course has a term integer (`0` means unselected), and a Boolean selection variable. Availability, exclusions, pins, term credit bounds, strict prerequisite ordering, co-requisite equality, requirement allocations, and supplied permission/placement assumptions are encoded as constraints. Unknown predicates become `invalid_model`, not an eligible course.
+
+Statuses are exact: `optimal` means CP-SAT proved the objective; `feasible` means a solution exists without an optimality proof; `infeasible` means the model proved no solution; `unknown` means the time limit ended without a proof or solution; and `invalid_model` means the request could not be represented safely. Every candidate is independently checked for credits, availability, prerequisites, co-requisites, and allocation. The checked alternative generator blocks prior assignments and returns another solve result, not a claimed exhaustive Pareto frontier.
+
+Pins are assumption literals so a proven infeasible model can expose the mapped pin core when CP-SAT supplies one. The user-facing diagnostic also tests one-at-a-time pin relaxations. Those suggestions are deliberately not called a minimal unsatisfiable core. A diagnostic limitation is returned when the core cannot explain a predicate or a structural rule.
