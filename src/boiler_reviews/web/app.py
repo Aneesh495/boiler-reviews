@@ -19,10 +19,14 @@ from boiler_reviews.db.migrate import upgrade
 from boiler_reviews.db.models import Account, Course, CourseAggregate, Review, ReviewRevision, Term
 from boiler_reviews.db.session import build_engine, build_session_factory, session_scope
 from boiler_reviews.identity.service import authenticate, register_account, to_authenticated
+from boiler_reviews.planning.api import plan_result_payload, request_from_json
+from boiler_reviews.planning.solver import solve
+from boiler_reviews.planning.validator import validate_plan
 from boiler_reviews.reviews.moderation import moderation_queue, report_review, vote_helpful
 from boiler_reviews.reviews.ranking import CourseCandidate, RankingPreferences, rank_courses
 from boiler_reviews.reviews.service import ReviewInput, create_review, edit_review, moderate_review, submit_review
-from boiler_reviews.reviews.stats import course_statistics, rating_summary, reconcile
+from boiler_reviews.sections.api import meeting_from_json, option_from_json
+from boiler_reviews.sections.scheduler import Meeting, choose_sections, export_icalendar, validate_schedule
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -274,6 +278,41 @@ def create_app(settings: Settings | None = None) -> Flask:
                 raise PermissionDenied("The moderator role is required.")
             return jsonify({"items": [{"review_id": review.id, "revision": revision, "open_reports": reports} for review, revision, reports in moderation_queue(session_db)]})
 
+    @app.post("/api/v1/plans/solve")
+    @require_account
+    def solve_plan_endpoint() -> Any:
+        body = json_body()
+        plan_request = request_from_json(body)
+        results = solve(plan_request, alternatives=min(max(int(body.get("alternatives", 1)), 1), 5))
+        return jsonify({"results": [plan_result_payload(result) for result in results], "catalog_version": body.get("catalog_version"), "degree_rule_version": body.get("degree_rule_version")})
+
+    @app.post("/api/v1/plans/validate")
+    @require_account
+    def validate_plan_endpoint() -> Any:
+        body = json_body()
+        plan_request = request_from_json(body.get("request", body))
+        assignment = {str(key): int(value) for key, value in body.get("assignment", {}).items()}
+        result = validate_plan(plan_request, assignment)
+        return jsonify({"valid": result.valid, "violations": list(result.violations)})
+
+    @app.post("/api/v1/schedules/choose")
+    @require_account
+    def choose_schedule_endpoint() -> Any:
+        body = json_body()
+        planned = {str(key): int(value) for key, value in body.get("planned_courses", {}).items()}
+        options = [option_from_json(item) for item in body.get("options", [])]
+        blocked = tuple(meeting_from_json(item) for item in body.get("blocked", []))
+        result = choose_sections(planned, options, blocked=blocked)
+        return jsonify({"status": result.status, "conflicts": list(result.conflicts), "unknown_meetings": list(result.unknown_meetings), "diagnostics": list(result.diagnostics), "selected": {code: _section_payload(option) for code, option in result.selected.items()}})
+
+    @app.post("/api/v1/schedules/calendar")
+    @require_account
+    def calendar_endpoint() -> Any:
+        body = json_body()
+        selected = {str(item["course_code"]): option_from_json(item) for item in body.get("selected", [])}
+        calendar = export_icalendar(selected, term_starts_on=str(body["term_starts_on"]), term_ends_on=str(body["term_ends_on"]), calendar_name=str(body.get("calendar_name", "Boiler Reviews schedule")))
+        return app.response_class(calendar, mimetype="text/calendar", headers={"Content-Disposition": "attachment; filename=boiler-reviews.ics"})
+
     @app.post("/api/v1/moderation/reviews/<review_id>")
     @require_account
     def moderate_review_endpoint(review_id: str) -> Any:
@@ -296,6 +335,10 @@ def create_app(settings: Settings | None = None) -> Flask:
         return render_template("dashboard.html")
 
     return app
+
+
+def _section_payload(option: Any) -> dict[str, Any]:
+    return {"course_code": option.course_code, "term_index": option.term_index, "section_id": option.section_id, "label": option.label, "linked_group": option.linked_group, "capacity": option.capacity, "capacity_observed_at": option.capacity_observed_at, "asynchronous": option.asynchronous, "meetings": [{"weekday": meeting.weekday, "start_minute": meeting.start_minute, "end_minute": meeting.end_minute, "timezone": meeting.timezone, "location": meeting.location, "known": meeting.known} for meeting in option.meetings]}
 
 
 def _statistics_payload(statistics: Any) -> dict[str, Any]:
