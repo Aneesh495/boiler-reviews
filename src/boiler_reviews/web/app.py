@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import secrets
+import time
 from functools import wraps
 from pathlib import Path
 from typing import Any, Callable, TypeVar
@@ -18,8 +19,8 @@ from boiler_reviews.db.health import readiness
 from boiler_reviews.db.migrate import upgrade
 from boiler_reviews.db.models import Account, Course, CourseAggregate, Review, ReviewRevision, Term
 from boiler_reviews.db.session import build_engine, build_session_factory, session_scope
-from boiler_reviews.identity.service import authenticate, register_account, to_authenticated
-from boiler_reviews.planning.api import plan_result_payload, request_from_json
+from boiler_reviews.identity.service import authenticate, register_account
+from boiler_reviews.ops.logging import Metrics, configure_logging
 from boiler_reviews.planning.solver import solve
 from boiler_reviews.planning.validator import validate_plan
 from boiler_reviews.reviews.moderation import moderation_queue, report_review, vote_helpful
@@ -55,13 +56,19 @@ def create_app(settings: Settings | None = None) -> Flask:
         app.extensions["csrf"] = csrf
 
     logger = logging.getLogger("boiler_reviews.http")
+    metrics = Metrics()
+    app.extensions["metrics"] = metrics
+    configure_logging(os.getenv("LOG_LEVEL", "INFO"))
 
     @app.before_request
     def request_context() -> None:
         g.request_id = request.headers.get("X-Request-ID", secrets.token_hex(8))
+        g.request_started = time.perf_counter()
 
     @app.after_request
     def response_context(response: Any) -> Any:
+        metrics.increment(f"http_requests_total:{request.method}:{response.status_code}")
+        metrics.observe("http_request", (time.perf_counter() - g.request_started) * 1000)
         response.headers["X-Request-ID"] = g.request_id
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
@@ -118,7 +125,10 @@ def create_app(settings: Settings | None = None) -> Flask:
             payload = readiness(session_db)
         return jsonify(payload), 200 if payload["status"] == "ready" else 503
 
-    @app.get("/api/v1/csrf")
+    @app.get("/metrics")
+    def metrics_endpoint() -> Any:
+        return jsonify(metrics.snapshot())
+
     def csrf_token() -> Any:
         from flask_wtf.csrf import generate_csrf
         return jsonify({"csrf_token": generate_csrf()})

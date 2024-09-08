@@ -4,7 +4,7 @@ DATABASE_URL ?= sqlite:///instance/boiler_reviews.sqlite3
 export DATABASE_URL
 export PYTHONPATH := src
 
-.PHONY: bootstrap dev demo test test-integration test-e2e test-solver migrate-legacy-dry-run benchmark acceptance verify census
+.PHONY: bootstrap dev demo worker reconcile test test-integration test-e2e test-solver migrate-legacy-dry-run benchmark acceptance verify census
 
 bootstrap:
 	@test -x "$(PYTHON)" || (python3 -m venv venv && venv/bin/pip install -r requirements.txt)
@@ -18,6 +18,12 @@ dev:
 
 demo:
 	@$(PYTHON) -m boiler_reviews.cli demo
+
+worker:
+	@$(PYTHON) -m boiler_reviews.worker --once
+
+reconcile:
+	@$(PYTHON) -m boiler_reviews.cli reconcile $(if $(REPAIR),--repair,)
 
 test:
 	@$(PYTHON) -m pytest -q

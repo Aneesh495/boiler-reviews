@@ -21,6 +21,11 @@ def build_engine(settings: Settings) -> Engine:
             "check_same_thread": False,
             "timeout": settings.connect_timeout_seconds,
         }
+    elif settings.database_url.startswith(("postgresql", "postgres")):
+        kwargs["connect_args"] = {
+            "connect_timeout": settings.connect_timeout_seconds,
+            "options": f"-c statement_timeout={settings.query_timeout_ms}",
+        }
     engine = create_engine(settings.database_url, **kwargs)
     if engine.dialect.name == "sqlite":
         @event.listens_for(engine, "connect")

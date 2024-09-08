@@ -14,6 +14,7 @@ class Settings:
     secret_key: str
     database_url: str
     connect_timeout_seconds: int = 5
+    query_timeout_ms: int = 5000
     planner_time_limit_seconds: int = 15
     worker_poll_seconds: float = 1.0
     task_lease_seconds: int = 60
@@ -35,6 +36,7 @@ class Settings:
             secret_key=secret_key,
             database_url=database_url,
             connect_timeout_seconds=int(os.getenv("DATABASE_CONNECT_TIMEOUT_SECONDS", "5")),
+            query_timeout_ms=int(os.getenv("DATABASE_QUERY_TIMEOUT_MS", "5000")),
             planner_time_limit_seconds=int(os.getenv("PLANNER_TIME_LIMIT_SECONDS", "15")),
             worker_poll_seconds=float(os.getenv("WORKER_POLL_SECONDS", "1")),
             task_lease_seconds=int(os.getenv("TASK_LEASE_SECONDS", "60")),

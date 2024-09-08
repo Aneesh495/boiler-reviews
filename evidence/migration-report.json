@@ -1,0 +1,19 @@
+{
+  "aggregate_mismatches": 0,
+  "course_identity_mappings": {
+    "CS251": "abb2dd99c59d29b7",
+    "CS348": "f3f1193359369cf5",
+    "ECE270": "713d4bb24dd89249",
+    "MA261": "a41bdb08456cd173"
+  },
+  "invalid_ratings": 0,
+  "missing_foreign_keys": 0,
+  "rows": {
+    "course_stats": 4,
+    "courses": 4,
+    "reviews": 12,
+    "semesters": 3
+  },
+  "source": "/Users/aneeshkrishna/Dev/projects/boiler-reviews/.runtime/backups/course_reviews-2026-10-01.sqlite",
+  "unknown_authorship": 12
+}
