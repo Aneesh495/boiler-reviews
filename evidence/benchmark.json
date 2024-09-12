@@ -1,0 +1,16 @@
+{
+  "reference": "local development machine",
+  "repetitions": 5,
+  "read_ms": {
+    "p50": 0.17008301801979542,
+    "p95": 1.0795840062201023,
+    "samples": [
+      1.0795840062201023,
+      0.21525000920519233,
+      0.17008301801979542,
+      0.15354197239503264,
+      0.14849996659904718
+    ]
+  },
+  "semantic_gate": "separate from performance target"
+}
