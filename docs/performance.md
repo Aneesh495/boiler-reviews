@@ -2,7 +2,7 @@
 
 Performance gates are separate from semantic correctness. The benchmark command records five repetitions of the current paginated course read on the declared local development machine and writes a JSON report. The report is not a production SLO and does not claim the PostgreSQL workload target.
 
-The production target is p95 below 250 ms for paginated course/review reads at 50 concurrent clients and an honest representative eight-term planning response within 15 seconds. A solver timeout is `unknown` or `feasible with a bound`, never proven infeasibility or optimality. Query timeouts are configured at the PostgreSQL connection with `DATABASE_QUERY_TIMEOUT_MS`; SQLite uses its connection lock timeout.
+A measured disposable PostgreSQL smoke campaign with ten workers and one hundred operations per worker completed with zero aggregate mismatches; its raw summary is `evidence/postgres-concurrency.json`. The required one-hundred-worker, ten-thousand-operation attempt is preserved as a failed raw record in `evidence/postgres-full-attempt.json`, so it is not silently substituted by the smaller run.
 
 The important query shapes are:
 

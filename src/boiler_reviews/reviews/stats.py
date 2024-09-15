@@ -69,7 +69,7 @@ def full_recompute(session: Session) -> dict[tuple[str, str], dict[str, int]]:
     rows = session.execute(
         select(Review, ReviewRevision)
         .join(ReviewRevision, (ReviewRevision.review_id == Review.id) & (ReviewRevision.revision == Review.published_revision))
-        .where(Review.status.in_(["published", "submitted"]), Review.published_revision.is_not(None))
+        .where(Review.status.in_(["published", "submitted", "rejected"]), Review.published_revision.is_not(None))
     )
     for review, revision in rows:
         key = (review.course_id, review.term_id)

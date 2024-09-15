@@ -1,0 +1,12 @@
+{
+  "database": "boiler_reviews_acceptance_full",
+  "workers": 100,
+  "operations_per_worker": 100,
+  "requested_operations": 10000,
+  "observed_reviews_before_process_termination": 100,
+  "observed_review_revisions": 1800,
+  "observed_statuses": {"submitted": 100},
+  "status": "failed",
+  "reason": "The local campaign process terminated before returning a completion record; the required 100-worker profile is not accepted as passing evidence.",
+  "follow_up": "Run the same campaign in the scheduled PostgreSQL acceptance profile with captured worker logs and resource limits."
+}

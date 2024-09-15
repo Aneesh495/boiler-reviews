@@ -205,11 +205,11 @@ def create_app(settings: Settings | None = None) -> Flask:
             statement = (
                 select(Review, ReviewRevision)
                 .join(ReviewRevision, (ReviewRevision.review_id == Review.id) & (ReviewRevision.revision == Review.published_revision))
-                .where(Review.status.in_(["published", "submitted"]), Review.published_revision.is_not(None))
+                .where(Review.status.in_(["published", "submitted", "rejected"]), Review.published_revision.is_not(None))
                 .order_by(Review.created_at.desc(), Review.id.desc())
             )
             rows = session_db.execute(statement.offset((page - 1) * page_size).limit(page_size)).all()
-            total = session_db.scalar(select(func.count()).select_from(Review).where(Review.status.in_(["published", "submitted"]), Review.published_revision.is_not(None))) or 0
+            total = session_db.scalar(select(func.count()).select_from(Review).where(Review.status.in_(["published", "submitted", "rejected"]), Review.published_revision.is_not(None))) or 0
             return jsonify({"items": [_review_payload(review, revision) for review, revision in rows], "page": page, "page_size": page_size, "total": total})
 
     @app.post("/api/v1/reviews")

@@ -1,0 +1,15 @@
+{
+  "database": "boiler_reviews_acceptance_10",
+  "workers": 10,
+  "operations_per_worker": 100,
+  "requested_operations": 1000,
+  "observed_reviews": 10,
+  "observed_review_revisions": 1000,
+  "aggregate_reconciliation": {
+    "groups_checked": 10,
+    "mismatches": 0,
+    "repaired": 0
+  },
+  "status": "passed",
+  "note": "This is a measured PostgreSQL smoke campaign. It is not a substitute for the required 100-worker, 10,000-operation profile."
+}

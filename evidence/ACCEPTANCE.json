@@ -1,69 +1,79 @@
 {
+  "profile": "local-acceptance",
+  "synthetic": true,
   "gates": {
-    "browser_e2e": {
-      "reason": "No browser runner configured",
-      "status": "not_run"
-    },
-    "catalog_activation": {
-      "evidence": "demo seed and migration dry-run",
-      "status": "passed"
-    },
-    "client_build": {
-      "command": "npm run build",
-      "returncode": 0,
+    "python_suite": {
       "status": "passed",
-      "tail": "\n> client@0.1.0 build\n> react-scripts build\n\nCreating an optimized production build...\nCompiled successfully.\n\nFile sizes after gzip:\n\n  62.44 kB (+51 B)  build/static/js/main.303c8b7c.js\n  1.75 kB           build/static/js/453.eca5f793.chunk.js\n  1.18 kB (+41 B)   build/static/css/main.946e4f51.css\n\nThe project was built assuming it is hosted at /.\nYou can control this with the homepage field in your package.json.\n\nThe build folder is ready to be deployed.\nYou may serve it with a static server:\n\n  npm install -g serve\n  serve -s build\n\nFind out more about deployment here:\n\n  https://cra.link/deployment\n\n(node:4387) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead\n(Use `node --trace-deprecation ...` to show where the warning was created)\nBrowserslist: browsers data (caniuse-lite) is 10 months old. Please run:\n  npx update-browserslist-db@latest\n  Why you should do it regularly: https://github.com/browserslist/update-db#readme\nBrowserslist: browsers data (caniuse-lite) is 10 months old. Please run:\n  npx update-browserslist-db@latest\n  Why you should do it regularly: https://github.com/browserslist/update-db#readme\n"
+      "command": "PYTHONPATH=src venv/bin/python -m pytest -q",
+      "tests_passed": 37
     },
     "client_unit": {
-      "command": "npm test -- --watchAll=false",
-      "returncode": 0,
       "status": "passed",
-      "tail": "\n> client@0.1.0 test\n> react-scripts test --watchAll=false\n\nPASS src/App.test.js\n  \u2713 renders planner and keyboard guidance (47 ms)\n\nTest Suites: 1 passed, 1 total\nTests:       1 passed, 1 total\nSnapshots:   0 total\nTime:        0.632 s, estimated 1 s\nRan all test suites.\n"
+      "command": "npm test -- --watchAll=false"
     },
-    "large_planning": {
-      "reason": "Native CP-SAT unavailable on this host",
-      "status": "not_run"
-    },
-    "optimization_oracle": {
-      "cases": 1000,
-      "mismatches": 0,
-      "native_cp_sat": "blocked_by_native_import_crash",
-      "status": "passed"
+    "client_build": {
+      "status": "passed",
+      "command": "npm run build",
+      "returncode": 0
     },
     "parser": {
-      "expressions": 1000,
-      "status": "passed"
-    },
-    "postgres_concurrency": {
-      "reason": "No PostgreSQL service was configured for this local campaign",
-      "status": "not_run"
-    },
-    "python_suite": {
-      "command": "/Users/aneeshkrishna/Dev/projects/boiler-reviews/venv/bin/python -m pytest -q",
-      "returncode": 0,
       "status": "passed",
-      "tail": ".....................................                                    [100%]\n37 passed in 0.61s\n"
+      "expressions": 1000
+    },
+    "catalog_activation": {
+      "status": "passed",
+      "evidence": "demo seed and migration dry-run"
     },
     "recovery": {
-      "requeued": 100,
+      "status": "passed",
       "scenarios": 100,
-      "status": "passed"
+      "requeued": 100
     },
-    "restore_proof": {
-      "reason": "No PostgreSQL dump/restore service configured",
-      "status": "not_run"
+    "optimization_oracle": {
+      "status": "passed",
+      "cases": 1000,
+      "mismatches": 0,
+      "native_cp_sat": "blocked_by_native_import_crash"
+    },
+    "postgres_migration": {
+      "status": "passed",
+      "database": "boiler_reviews_acceptance2",
+      "schema_version": [
+        "0001_domain_schema",
+        "0002_task_attempts"
+      ]
+    },
+    "postgres_smoke_concurrency": {
+      "status": "passed",
+      "evidence": "evidence/postgres-concurrency.json"
+    },
+    "postgres_concurrency": {
+      "status": "failed",
+      "evidence": "evidence/postgres-full-attempt.json",
+      "reason": "Required 100-worker profile terminated before completion"
     },
     "review_10000_and_100_workers": {
-      "reason": "Requires PostgreSQL concurrency profile",
-      "status": "not_run"
+      "status": "failed",
+      "evidence": "evidence/postgres-full-attempt.json",
+      "reason": "Required workload is not proven"
+    },
+    "large_planning": {
+      "status": "not_run",
+      "reason": "Native CP-SAT unavailable on this host"
+    },
+    "browser_e2e": {
+      "status": "not_run",
+      "reason": "No browser runner configured"
+    },
+    "restore_proof": {
+      "status": "not_run",
+      "reason": "No PostgreSQL dump/restore service configured"
     }
   },
-  "profile": "local-acceptance",
   "required_external_profiles": [
-    "postgresql",
     "native_cp_sat",
     "browser",
-    "restore"
-  ],
-  "synthetic": true
+    "restore",
+    "postgresql_full_concurrency"
+  ]
 }

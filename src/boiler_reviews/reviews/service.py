@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
@@ -177,7 +178,8 @@ def _transition(session: Session, review: Review, *, actor_id: str, target: str,
         raise ConflictError(f"Cannot transition review from {review.status} to {target}.")
     old_status = review.status
     old_published = _revision(session, review, review.published_revision) if review.published_revision else None
-    if old_status == "published" and target != "published" and old_published is not None:
+    has_public_approved_revision = old_published is not None and old_status in {"published", "submitted", "rejected"}
+    if target in {"hidden", "withdrawn"} and has_public_approved_revision:
         aggregate = adjust_aggregate(
             session,
             course_id=review.course_id,
@@ -189,11 +191,12 @@ def _transition(session: Session, review: Review, *, actor_id: str, target: str,
     review.status = target
     if target == "published":
         new_published = _revision(session, review, review.current_revision)
-        if old_published is not None:
-            old_course = review.course_id
-            old_term = review.term_id
-            old_aggregate = adjust_aggregate(session, course_id=old_course, term_id=old_term, revision=old_published, direction=-1)
+        # A pending/rejected revision replaces the old approved sufficient
+        # statistics. Hidden content was already removed from the aggregate.
+        if old_published is not None and old_status in {"submitted", "rejected"}:
+            old_aggregate = adjust_aggregate(session, course_id=review.course_id, term_id=review.term_id, revision=old_published, direction=-1)
             remove_empty_aggregate(session, old_aggregate)
+            session.flush()
         adjust_aggregate(session, course_id=review.course_id, term_id=review.term_id, revision=new_published, direction=1)
         review.published_revision = review.current_revision
         new_published.submitted_at = datetime.now(timezone.utc)
@@ -206,7 +209,7 @@ def _transition(session: Session, review: Review, *, actor_id: str, target: str,
     )
     session.add(
         OutboxEvent(
-            event_key=f"review:{review.id}:revision:{review.current_revision}:state:{target}",
+            event_key=f"review:{review.id}:transition:{uuid.uuid4()}",
             event_type="review.status_changed",
             payload_json={"review_id": review.id, "from": old_status, "to": target},
         )

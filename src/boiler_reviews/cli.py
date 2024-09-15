@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,7 @@ from boiler_reviews.db.migrate import MIGRATIONS, upgrade
 from boiler_reviews.db.models import Account, CatalogSnapshot, Course, DurableTask
 from boiler_reviews.db.session import build_engine, build_session_factory, session_scope
 from boiler_reviews.identity.service import register_account
+from boiler_reviews.ops.campaigns import run_postgres_review_campaign
 from boiler_reviews.ops.logging import configure_logging
 from boiler_reviews.ops.recovery import reconcile_expired_tasks
 from boiler_reviews.planning.model import CourseSpec, PlanRequest, TermSpec
@@ -143,6 +145,12 @@ def command_acceptance() -> None:
     for index in range(1000):
         if parse_prerequisites(f"CS{index:03d} AND (MA101 OR MA102)").status == "parsed": parser_cases += 1
     planner = _planner_campaign(); recovery = _recovery_campaign()
+    settings = Settings.from_env()
+    if settings.database_url.startswith(("postgresql", "postgres")):
+        campaign = asdict(run_postgres_review_campaign(build_session_factory(build_engine(settings))))
+        postgres_gate = campaign
+    else:
+        postgres_gate = {"status": "not_run", "reason": "No PostgreSQL service was configured for this local campaign"}
     gates = {
         "python_suite": _run([sys.executable, "-m", "pytest", "-q"], cwd=root),
         "client_unit": _run(["npm", "test", "--", "--watchAll=false"], cwd=root / "client"),
@@ -151,8 +159,8 @@ def command_acceptance() -> None:
         "catalog_activation": {"status": "passed", "evidence": "demo seed and migration dry-run"},
         "recovery": recovery,
         "optimization_oracle": planner,
-        "postgres_concurrency": {"status": "not_run", "reason": "No PostgreSQL service was configured for this local campaign"},
-        "review_10000_and_100_workers": {"status": "not_run", "reason": "Requires PostgreSQL concurrency profile"},
+        "postgres_concurrency": postgres_gate,
+        "review_10000_and_100_workers": postgres_gate,
         "large_planning": {"status": "not_run", "reason": "Native CP-SAT unavailable on this host"},
         "browser_e2e": {"status": "not_run", "reason": "No browser runner configured"},
         "restore_proof": {"status": "not_run", "reason": "No PostgreSQL dump/restore service configured"},
