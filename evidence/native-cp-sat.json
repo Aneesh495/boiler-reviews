@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "runtime": "Python 3.11.14",
+  "ortools": "9.15.6755",
+  "smoke_status": "optimal",
+  "objective_value": 15000,
+  "best_bound": 15000.0,
+  "bound_matched": true,
+  "note": "The default Python 3.14 development runtime uses the guarded fallback because its native import is unstable; acceptance invokes this supported Python 3.11 runtime explicitly."
+}

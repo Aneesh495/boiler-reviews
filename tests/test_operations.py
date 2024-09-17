@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import UTC
 
+from boiler_reviews.db.models import DurableTask
 from boiler_reviews.ops.logging import Metrics, RedactingJsonFormatter
 from boiler_reviews.ops.recovery import reconcile_expired_tasks
-from boiler_reviews.db.models import DurableTask
 from boiler_reviews.tasks.queue import enqueue
 
 
@@ -29,8 +30,8 @@ def test_expired_task_is_requeued(app):
     with factory() as session:
         task = enqueue(session, task_type="solve", payload={})
         task.status = "running"
-        from datetime import datetime, timedelta, timezone
-        task.lease_until = datetime.now(timezone.utc) - timedelta(seconds=1)
+        from datetime import datetime, timedelta
+        task.lease_until = datetime.now(UTC) - timedelta(seconds=1)
         session.commit()
     with factory() as session:
         result = reconcile_expired_tasks(session)

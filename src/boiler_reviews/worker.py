@@ -12,7 +12,7 @@ from boiler_reviews.config import Settings
 from boiler_reviews.db.session import build_engine, build_session_factory, session_scope
 from boiler_reviews.ops.logging import configure_logging
 from boiler_reviews.ops.recovery import reconcile_expired_tasks
-from boiler_reviews.planning.api import request_from_json, plan_result_payload
+from boiler_reviews.planning.api import plan_result_payload, request_from_json
 from boiler_reviews.planning.solver import solve
 from boiler_reviews.reviews.reconcile import reconcile_and_record
 from boiler_reviews.tasks.queue import TaskLease, TaskWorker

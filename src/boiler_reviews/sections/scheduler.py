@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
-from typing import Iterable
 
 
 @dataclass(frozen=True, slots=True)
@@ -14,7 +14,7 @@ class Meeting:
     location: str | None = None
     known: bool = True
 
-    def overlaps(self, other: "Meeting") -> bool:
+    def overlaps(self, other: Meeting) -> bool:
         if not self.known or not other.known or self.start_minute is None or other.start_minute is None or self.end_minute is None or other.end_minute is None:
             return False
         return self.weekday == other.weekday and self.start_minute < other.end_minute and other.start_minute < self.end_minute

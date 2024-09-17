@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import ValidationError as PydanticValidationError
@@ -15,7 +15,14 @@ from boiler_reviews.catalog.graph import PrerequisiteGraph
 from boiler_reviews.catalog.parser import ast_to_json, parse_prerequisites
 from boiler_reviews.catalog.schema import CatalogDocument
 from boiler_reviews.common.errors import ConflictError, NotFoundError, ValidationError
-from boiler_reviews.db.models import AuditEvent, CatalogSnapshot, Course, CourseVersion, Institution, Term
+from boiler_reviews.db.models import (
+    AuditEvent,
+    CatalogSnapshot,
+    Course,
+    CourseVersion,
+    Institution,
+    Term,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -145,7 +152,7 @@ def activate_catalog(session: Session, *, snapshot_id: str) -> CatalogSnapshot:
     for value in previous:
         value.status = "archived"
     snapshot.status = "active"
-    snapshot.activated_at = datetime.now(timezone.utc)
+    snapshot.activated_at = datetime.now(UTC)
     session.add(AuditEvent(actor_id=None, event_type="catalog.activated", entity_type="catalog_snapshot", entity_id=snapshot.id, payload_json={"previous": [value.id for value in previous]}))
     return snapshot
 

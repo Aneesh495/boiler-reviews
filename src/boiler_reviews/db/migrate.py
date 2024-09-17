@@ -1,9 +1,20 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, Engine, MetaData, String, Table, create_engine, inspect, insert, select, text
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Engine,
+    MetaData,
+    String,
+    Table,
+    insert,
+    inspect,
+    select,
+    text,
+)
 
 from boiler_reviews.config import Settings, project_root
 from boiler_reviews.db.models import Base
@@ -47,7 +58,7 @@ def upgrade(engine: Engine) -> bool:
             if existing:
                 continue
             _apply_migration(connection, version)
-            connection.execute(insert(migrations).values(version=version, applied_at=datetime.now(timezone.utc)))
+            connection.execute(insert(migrations).values(version=version, applied_at=datetime.now(UTC)))
             changed = True
     return changed
 

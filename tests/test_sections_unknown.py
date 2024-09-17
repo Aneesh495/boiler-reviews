@@ -1,4 +1,4 @@
-from boiler_reviews.sections.scheduler import Meeting, SectionOption, choose_sections
+from boiler_reviews.sections.scheduler import SectionOption, choose_sections
 
 
 def test_no_options_is_infeasible():

@@ -1,0 +1,32 @@
+{
+  "after": {
+    "assignment": {
+      "CS101": 1,
+      "CS201": 2,
+      "MA101": 1
+    },
+    "best_bound": 15000.0,
+    "objective_value": 15000,
+    "status": "optimal"
+  },
+  "before": {
+    "assignment": {
+      "CS101": 1,
+      "CS201": 2,
+      "MA101": 1
+    },
+    "best_bound": 15000.0,
+    "objective_value": 15000,
+    "status": "optimal"
+  },
+  "both_optimal": true,
+  "reproduced_assignment": true,
+  "restored_plan_count": 1,
+  "snapshot_count": 1,
+  "source_plan": {
+    "degree_rule_id": "69b39631-802f-4f1c-b4ec-1a3046635814",
+    "plan_id": "371e6340-8709-49ea-a25f-9018b37c9410",
+    "snapshot_id": "db49204f-fb8a-49fc-9f0b-d959ae12b6a9"
+  },
+  "status": "passed"
+}

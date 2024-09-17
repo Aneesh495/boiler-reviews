@@ -2,13 +2,24 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from boiler_reviews.common.errors import ConflictError, NotFoundError, PermissionDenied, ValidationError
-from boiler_reviews.db.models import AuditEvent, ModerationDecision, OutboxEvent, Review, ReviewRevision
+from boiler_reviews.common.errors import (
+    ConflictError,
+    NotFoundError,
+    PermissionDenied,
+    ValidationError,
+)
+from boiler_reviews.db.models import (
+    AuditEvent,
+    ModerationDecision,
+    OutboxEvent,
+    Review,
+    ReviewRevision,
+)
 from boiler_reviews.identity.service import require_role
 from boiler_reviews.reviews.stats import adjust_aggregate, remove_empty_aggregate
 
@@ -124,7 +135,7 @@ def edit_review(session: Session, *, actor_id: str, review_id: str, data: Review
             overall=data.overall,
             would_recommend=data.would_recommend,
             comment=data.comment.strip() if data.comment else None,
-            submitted_at=datetime.now(timezone.utc) if review.status == "submitted" else None,
+            submitted_at=datetime.now(UTC) if review.status == "submitted" else None,
         )
     )
     _audit(session, actor_id=actor_id, event_type="review.edited", review_id=review.id, payload={"revision": review.current_revision})
@@ -199,7 +210,7 @@ def _transition(session: Session, review: Review, *, actor_id: str, target: str,
             session.flush()
         adjust_aggregate(session, course_id=review.course_id, term_id=review.term_id, revision=new_published, direction=1)
         review.published_revision = review.current_revision
-        new_published.submitted_at = datetime.now(timezone.utc)
+        new_published.submitted_at = datetime.now(UTC)
     _audit(
         session,
         actor_id=actor_id,

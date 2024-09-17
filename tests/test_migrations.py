@@ -4,7 +4,6 @@ from sqlalchemy import Table, inspect, select
 
 from boiler_reviews.db.migrate import MIGRATIONS, upgrade
 from boiler_reviews.db.models import Base
-from boiler_reviews.db.session import build_engine
 
 
 def test_migration_is_idempotent(app):

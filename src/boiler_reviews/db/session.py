@@ -22,6 +22,8 @@ def build_engine(settings: Settings) -> Engine:
             "timeout": settings.connect_timeout_seconds,
         }
     elif settings.database_url.startswith(("postgresql", "postgres")):
+        kwargs["pool_size"] = settings.database_pool_size
+        kwargs["max_overflow"] = settings.database_max_overflow
         kwargs["connect_args"] = {
             "connect_timeout": settings.connect_timeout_seconds,
             "options": f"-c statement_timeout={settings.query_timeout_ms}",

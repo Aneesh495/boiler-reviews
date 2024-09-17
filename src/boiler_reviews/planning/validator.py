@@ -2,8 +2,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from boiler_reviews.catalog.ast import AllOf, AnyOf, CoRequisite, CourseRef, CreditsAtLeast, Expr, GradeAtLeast, Predicate
-from boiler_reviews.planning.model import CourseSpec, PlanRequest
+from boiler_reviews.catalog.ast import (
+    AllOf,
+    AnyOf,
+    CoRequisite,
+    CourseRef,
+    CreditsAtLeast,
+    Expr,
+    GradeAtLeast,
+    Predicate,
+)
+from boiler_reviews.planning.model import PlanRequest
 
 
 @dataclass(frozen=True, slots=True)

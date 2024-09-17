@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy import select
 
-from boiler_reviews.db.models import Account, CourseAggregate, Review
+from boiler_reviews.db.models import Account, CourseAggregate
 
 
 def review_payload(client, app):

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from typing import Any, Callable
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, sessionmaker
@@ -30,7 +31,7 @@ def enqueue(session: Session, *, task_type: str, payload: dict[str, Any], accoun
 
 
 def claim(session: Session, *, owner: str, lease_seconds: int = 60) -> TaskLease | None:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     task = session.scalar(
         select(DurableTask)
         .where(
@@ -66,7 +67,7 @@ def heartbeat(session: Session, *, lease: TaskLease, lease_seconds: int = 60) ->
     if task.cancel_requested:
         task.status = "cancelled"
         raise ConflictError("Task cancellation was requested.")
-    task.lease_until = datetime.now(timezone.utc) + timedelta(seconds=lease_seconds)
+    task.lease_until = datetime.now(UTC) + timedelta(seconds=lease_seconds)
     return task
 
 

@@ -2,15 +2,19 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Any
+from datetime import UTC, datetime
 
-from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 
-from boiler_reviews.db.models import Account, Course, Institution, Review, Term
+from boiler_reviews.db.models import Course, Institution, Review, Term
 from boiler_reviews.identity.service import register_account
-from boiler_reviews.reviews.service import ReviewInput, create_review, edit_review, moderate_review, submit_review
+from boiler_reviews.reviews.service import (
+    ReviewInput,
+    create_review,
+    edit_review,
+    moderate_review,
+    submit_review,
+)
 from boiler_reviews.reviews.stats import reconcile
 
 
@@ -28,7 +32,7 @@ class ConcurrencyCampaign:
 def run_postgres_review_campaign(factory: sessionmaker, *, workers: int = 100, operations_per_worker: int = 100) -> ConcurrencyCampaign:
     """Run independent writer transactions; intended for a disposable PostgreSQL database."""
     with factory() as session:
-        institution = Institution(name="Concurrency Test", code=f"CONC{datetime.now(timezone.utc).strftime('%H%M%S%f')[-8:]}")
+        institution = Institution(name="Concurrency Test", code=f"CONC{datetime.now(UTC).strftime('%H%M%S%f')[-8:]}")
         session.add(institution); session.flush()
         moderator = register_account(session, email=f"moderator-{institution.code}@test.invalid", password="concurrency-test-password", display_name="Concurrency moderator", roles=["moderator"], synthetic=True)
         term = Term(institution_id=institution.id, name="Fall", year=2026, starts_on="2026-08-24", ends_on="2026-12-19")

@@ -40,7 +40,6 @@ def audit_degree(
     proposed_by_term = proposed_by_term or {}
     credit_by_code = credit_by_code or {}
     proposed = {code for courses in proposed_by_term.values() for code in courses}
-    all_known = completed | proposed
     allocations: dict[str, str] = {}
     result: list[AuditRequirement] = []
     unknown: list[str] = []

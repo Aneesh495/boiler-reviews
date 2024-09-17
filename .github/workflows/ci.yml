@@ -1,0 +1,58 @@
+name: Boiler Reviews CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * 6'
+
+jobs:
+  fast:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: boiler_reviews_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U postgres -d boiler_reviews_ci"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: python -m venv venv
+      - run: venv/bin/pip install -r requirements.txt
+      - run: venv/bin/ruff check src tests app.py init_db.py seed_db.py
+      - run: PYTHONPATH=src venv/bin/python -m pytest -q
+      - run: npm ci
+        working-directory: client
+      - run: CI=true npm test -- --watchAll=false
+        working-directory: client
+      - run: CI=true GENERATE_SOURCEMAP=false npm run build
+        working-directory: client
+
+  full-acceptance:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    needs: fast
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m venv venv && venv/bin/pip install -r requirements.txt
+      - run: make acceptance
+      - run: make verify

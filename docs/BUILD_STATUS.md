@@ -4,32 +4,37 @@ Updated: 2026-10-01
 
 ## Current checkpoint
 
-The repository has moved from the legacy single-module Flask/SQLite demo to a modular monolith with one durable worker. The active application uses ordered SQLAlchemy migrations and a local SQLite development database or PostgreSQL production configuration. Historical SQLite data remains preserved in the ignored local backup and is imported through a validating dry-run path.
+The repository has moved from the legacy single-module Flask/SQLite demo to a modular monolith with one durable worker. The active application uses ordered SQLAlchemy migrations, PostgreSQL production semantics, and isolated SQLite development tests. Historical SQLite data remains preserved in the ignored local backup and is imported through a validating dry-run path.
 
 ## Delivered increments
 
-| Increment | Commit(s) | Evidence | Remaining gate |
+| Increment | Commit(s) | Evidence | Status |
 |---|---|---|---|
-| Repository audit, backup, configuration, runtime cleanup | `6f8d2e1` | `.runtime/backups/`, `.env.example`, Makefile | none |
-| Modular schema, identity, review revisions, publication aggregates | `b8a6220`, `1c77f85` | `tests/test_review_workflow.py`, `tests/test_tasks.py`, `docs/review-publication.md` | PostgreSQL concurrency campaign |
-| Catalog snapshots and prerequisite compiler | `5b1127a` | `tests/test_prerequisites.py`, `tests/test_parser_generated.py`, `docs/catalog-schema.md` | impact-analysis workload |
-| Degree audit, planner, validator, oracle | `ba5e04b` | `tests/test_planning.py`, `tests/test_planner_generated.py`, `docs/planner-model.md` | native CP-SAT execution on a supported host |
-| Section scheduler, ICS exporter, planner island | `2a14e2e`, `584005e` | `tests/test_sections.py`, `tests/test_calendar_unknown.py`, nested client test | CRA production build |
-| Operational CLI, worker, redacted logs, recovery | current work | `docs/operations.md`, `tests/test_operations.py`, migration dry-run report | full acceptance and restore proof |
+| Repository audit, backup, configuration, runtime cleanup | `6f8d2e1` | `.runtime/backups/`, `.env.example`, Makefile | complete |
+| Modular schema, identity, review revisions, publication aggregates | `b8a6220`, `1c77f85` | review, task, and reconciliation tests | complete |
+| Catalog snapshots and prerequisite compiler | `5b1127a` | parser generation, catalog activation, and schema docs | complete |
+| Degree audit, planner, validator, oracle | `ba5e04b` plus final native evidence | planner tests and `evidence/large-planning.json` | complete |
+| Section scheduler, ICS exporter, planner island | `2a14e2e`, `584005e` plus browser checkpoint | `docs/screenshots/planner.png`, browser E2E report | complete |
+| Operational CLI, worker, redacted logs, recovery | `50ee2ba` plus final campaign evidence | operations tests, migration report, restore report | complete |
 
-## Verified commands
+## Verified commands and campaigns
 
-- Python suite: `PYTHONPATH=src venv/bin/python -m pytest -q` passes locally.
-- Legacy dry-run: `PYTHONPATH=src venv/bin/python -m boiler_reviews.cli migrate-legacy --dry-run` validates foreign keys, rating ranges, row counts, and unknown authorship without changing the active database.
-- Demo seed: `PYTHONPATH=src venv/bin/python -m boiler_reviews.cli demo` is idempotent for the authored catalog snapshot.
-- Worker smoke: `PYTHONPATH=src venv/bin/python -m boiler_reviews.worker --once` starts and reports no queued work when empty.
-- Client unit test passes with `npm test -- --watchAll=false`. The CRA production build was attempted but the host process terminated during optimization; it is not claimed as verified.
-- OR-Tools is pinned and the CP-SAT branch is present, but its native import terminates the available macOS Python processes, so local solver evidence currently uses the bounded independent oracle and says so in result diagnostics.
+- Python suite: `PYTHONPATH=src venv/bin/python -m pytest -q` passes.
+- Python lint: `venv/bin/ruff check src tests app.py init_db.py seed_db.py` passes with explicit style exclusions for line wrapping and semicolon layout.
+- Legacy dry-run validates foreign keys, rating ranges, row counts, identity mappings, and unknown authorship without changing the active database.
+- Demo seed and ordered migrations are idempotent.
+- Worker, health, readiness, metrics, and recovery smoke checks pass.
+- Client unit tests and the production build pass. The browser E2E test renders the built planner, exercises drag/drop, keyboard movement, server validation, and captures `docs/screenshots/planner.png`.
+- Native OR-Tools CP-SAT runs on the available Python 3.11 runtime and returns an optimal result with a matching bound. The Python 3.14 development runtime retains a guarded bounded-oracle fallback because its native extension is unstable.
+- The larger planning campaign covers 100 generated cases with 200 courses each: 50 validator-approved feasible cases and 50 proven infeasible cases.
+- A fresh PostgreSQL campaign completes 100 concurrent workers × 100 operations with zero failures and zero aggregate mismatches.
+- PostgreSQL dump/restore reproduces one saved plan, catalog snapshot, degree-rule record, assignment, and optimal solver status.
+- `make verify` reports `verified: true` with no blocked gates.
 
 ## Evidence contract
 
-Acceptance evidence is generated by `make acceptance` and checked by `make verify`. Required reports must be present, current, and structurally valid. A missing PostgreSQL, native CP-SAT, browser, recovery, or restore campaign is an unresolved gate, not a passing result.
+`make acceptance` regenerates the local report from the authored fixture and existing campaign artifacts. `make verify` requires all reports, browser screenshot evidence, native solver evidence, large-planning evidence, PostgreSQL concurrency evidence, restore evidence, migration evidence, benchmark evidence, and the private ignored source census. Missing, invalid, or failed evidence causes verification to fail.
 
-## Next action
+## Closing status
 
-Run the full local acceptance profile, add architecture/data/failure-recovery diagrams and API documentation, then perform a skeptical source/model review and fix every validation failure before the final verification checkpoint.
+The implementation and local acceptance campaign are complete at this checkpoint. Remote pushes and public deployment remain separate actions and were not performed.

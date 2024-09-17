@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-from typing import Any, Callable
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, sessionmaker
@@ -11,7 +12,7 @@ from boiler_reviews.db.models import OutboxEvent
 
 
 def claim_events(session: Session, *, owner: str, limit: int = 50, lease_seconds: int = 60) -> list[str]:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     rows = session.scalars(
         select(OutboxEvent)
         .where(OutboxEvent.processed_at.is_(None), or_(OutboxEvent.claimed_until.is_(None), OutboxEvent.claimed_until < now))
@@ -42,7 +43,7 @@ def process_events(factory: sessionmaker[Session], *, owner: str, handler: Calla
             if event.claimed_by != owner:
                 raise ConflictError("Outbox claim was fenced by another worker.")
             handler(event.event_type, event.payload_json)
-            event.processed_at = datetime.now(timezone.utc)
+            event.processed_at = datetime.now(UTC)
             event.claimed_until = None
             session.commit()
             processed += 1

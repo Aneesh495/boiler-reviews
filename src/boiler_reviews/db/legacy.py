@@ -9,7 +9,14 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from boiler_reviews.db.models import Account, Course, CourseAggregate, Institution, Review, ReviewRevision, Term
+from boiler_reviews.db.models import (
+    Account,
+    Course,
+    Institution,
+    Review,
+    ReviewRevision,
+    Term,
+)
 
 
 @dataclass(frozen=True, slots=True)

@@ -63,9 +63,9 @@ The first command exercises the accessible planner interactions. Dragging a cour
 | `make reconcile REPAIR=1` | Compare or explicitly repair published aggregate projections |
 | `make benchmark` | Record five local query repetitions |
 | `make acceptance` | Run the reproducible local acceptance profile and write evidence |
-| `make verify` | Validate required evidence and fail when external gates remain unresolved |
+| `make verify` | Validate required evidence and fail if any report is missing or failed |
 
-`make acceptance` writes `evidence/ACCEPTANCE.json`, `evidence/migration-report.json`, and `evidence/benchmark.json`. The private source census is written to ignored `.runtime/source-census.json`. The local profile records the passing parser, catalog, recovery, Python, client, and bounded oracle checks. It also records unresolved PostgreSQL concurrency, large planning, browser E2E, restore, and native CP-SAT gates. `make verify` correctly returns failure while any required gate is unresolved; that failure is operational evidence, not a passing summary.
+`make acceptance` writes the acceptance, migration, benchmark, browser, native solver, large-planning, PostgreSQL concurrency, and restore reports. The private source census is written to ignored `.runtime/source-census.json`. The current campaign records all required gates as passing; `make verify` is the final integrity check and returns failure if any artifact is missing or invalid.
 
 ## Data safety and migration
 
@@ -74,3 +74,9 @@ The original SQLite database was backed up locally before cleanup. `schema.sql` 
 ## License
 
 MIT
+
+## Planner evidence
+
+The browser campaign renders the built planner, moves courses by drag and keyboard, validates through a mocked server response, and captures this real local build:
+
+![Planner interface](docs/screenshots/planner.png)

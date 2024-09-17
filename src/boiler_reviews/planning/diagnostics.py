@@ -27,7 +27,7 @@ def explain_infeasibility(request: PlanRequest, *, base_assignment: dict[str, in
     violations = validate_plan(request, assignment).violations
     core = tuple(sorted({f"pin:{code}" for code in request.pinned if any(code in violation for violation in violations)} | {f"term_budget:{term.index}" for term in request.terms if any(f"term {term.index}" in violation for violation in violations)}))
     relaxations: list[Relaxation] = []
-    for code, term in request.pinned.items():
+    for code in request.pinned:
         changed = dict(request.pinned)
         changed.pop(code)
         relaxed = PlanRequest(**{**request.__dict__, "pinned": changed}) if hasattr(request, "__dict__") else PlanRequest(courses=request.courses, terms=request.terms, requirements=request.requirements, completed=request.completed, completed_credits=request.completed_credits, grades=request.grades, permissions=request.permissions, placements=request.placements, pinned=changed, excluded=request.excluded, objective=request.objective, time_limit_seconds=request.time_limit_seconds, random_seed=request.random_seed)

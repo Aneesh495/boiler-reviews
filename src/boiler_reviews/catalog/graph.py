@@ -1,9 +1,18 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
 
-from boiler_reviews.catalog.ast import AllOf, AnyOf, CoRequisite, CourseRef, Expr, GradeAtLeast, Predicate, CreditsAtLeast
+from boiler_reviews.catalog.ast import (
+    AllOf,
+    AnyOf,
+    CoRequisite,
+    CourseRef,
+    CreditsAtLeast,
+    Expr,
+    GradeAtLeast,
+    Predicate,
+)
 
 
 @dataclass(frozen=True, slots=True)

@@ -4,7 +4,16 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from boiler_reviews.catalog.ast import AllOf, AnyOf, CoRequisite, CourseRef, CreditsAtLeast, Expr, GradeAtLeast, Predicate
+from boiler_reviews.catalog.ast import (
+    AllOf,
+    AnyOf,
+    CoRequisite,
+    CourseRef,
+    CreditsAtLeast,
+    Expr,
+    GradeAtLeast,
+    Predicate,
+)
 
 
 @dataclass(frozen=True, slots=True)

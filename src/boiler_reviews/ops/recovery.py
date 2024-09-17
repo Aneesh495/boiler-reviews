@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from boiler_reviews.db.models import DurableTask
@@ -10,7 +10,7 @@ from boiler_reviews.db.models import DurableTask
 
 def reconcile_expired_tasks(session: Session) -> dict[str, int]:
     """Make interrupted leases runnable without allowing an old worker to write."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     rows = session.scalars(select(DurableTask).where(DurableTask.status == "running", DurableTask.lease_until < now)).all()
     requeued = 0
     cancelled = 0

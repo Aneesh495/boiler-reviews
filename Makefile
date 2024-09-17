@@ -32,7 +32,7 @@ test-integration:
 	@$(PYTHON) -m pytest -q -m integration
 
 test-e2e:
-	@$(PYTHON) -m pytest -q -m e2e
+	@$(MAKE) -C client test:e2e
 
 test-solver:
 	@$(PYTHON) -m pytest -q -m solver

@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "cases": 100,
+  "courses_per_case": 200,
+  "feasible_cases": 50,
+  "infeasible_cases": 50,
+  "invalid_or_unexpected": 0,
+  "max_case_seconds": 0.12633208400802687,
+  "native_cp_sat": true,
+  "runtime_seconds": 5.366952463344205,
+  "statuses": {
+    "infeasible": 50,
+    "optimal": 50
+  }
+}

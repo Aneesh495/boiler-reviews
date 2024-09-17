@@ -15,13 +15,15 @@ class Settings:
     database_url: str
     connect_timeout_seconds: int = 5
     query_timeout_ms: int = 5000
+    database_pool_size: int = 20
+    database_max_overflow: int = 30
     planner_time_limit_seconds: int = 15
     worker_poll_seconds: float = 1.0
     task_lease_seconds: int = 60
     csrf_enabled: bool = True
 
     @classmethod
-    def from_env(cls) -> "Settings":
+    def from_env(cls) -> Settings:
         environment = os.getenv("APP_ENV", "development").strip().lower()
         secret_key = os.getenv("SECRET_KEY", "").strip()
         if environment == "production" and len(secret_key) < 32:
@@ -37,6 +39,8 @@ class Settings:
             database_url=database_url,
             connect_timeout_seconds=int(os.getenv("DATABASE_CONNECT_TIMEOUT_SECONDS", "5")),
             query_timeout_ms=int(os.getenv("DATABASE_QUERY_TIMEOUT_MS", "5000")),
+            database_pool_size=int(os.getenv("DATABASE_POOL_SIZE", "20")),
+            database_max_overflow=int(os.getenv("DATABASE_MAX_OVERFLOW", "30")),
             planner_time_limit_seconds=int(os.getenv("PLANNER_TIME_LIMIT_SECONDS", "15")),
             worker_poll_seconds=float(os.getenv("WORKER_POLL_SECONDS", "1")),
             task_lease_seconds=int(os.getenv("TASK_LEASE_SECONDS", "60")),

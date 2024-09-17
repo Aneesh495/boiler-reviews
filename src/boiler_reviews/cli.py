@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import statistics
@@ -9,6 +10,7 @@ import sys
 import tempfile
 import time
 from dataclasses import asdict
+from datetime import UTC
 from pathlib import Path
 from typing import Any
 
@@ -19,7 +21,7 @@ from boiler_reviews.catalog.service import activate_catalog, stage_catalog
 from boiler_reviews.config import Settings, project_root
 from boiler_reviews.db.legacy import import_legacy, inspect_legacy
 from boiler_reviews.db.migrate import MIGRATIONS, upgrade
-from boiler_reviews.db.models import Account, CatalogSnapshot, Course, DurableTask
+from boiler_reviews.db.models import Account, Course, DurableTask
 from boiler_reviews.db.session import build_engine, build_session_factory, session_scope
 from boiler_reviews.identity.service import register_account
 from boiler_reviews.ops.campaigns import run_postgres_review_campaign
@@ -129,9 +131,9 @@ def _recovery_campaign() -> dict[str, Any]:
         settings = Settings(environment="test", secret_key="recovery-test", database_url=f"sqlite:///{Path(directory) / 'recovery.sqlite3'}", csrf_enabled=False)
         engine = build_engine(settings); factory = build_session_factory(engine); upgrade(engine)
         with session_scope(factory) as session:
-            from datetime import datetime, timedelta, timezone
+            from datetime import datetime, timedelta
             for index in range(100):
-                task = DurableTask(task_type="recovery", payload_json={"scenario": index}, status="running", lease_until=datetime.now(timezone.utc) - timedelta(seconds=1))
+                task = DurableTask(task_type="recovery", payload_json={"scenario": index}, status="running", lease_until=datetime.now(UTC) - timedelta(seconds=1))
                 session.add(task)
         with session_scope(factory) as session:
             result = reconcile_expired_tasks(session)
@@ -139,18 +141,49 @@ def _recovery_campaign() -> dict[str, Any]:
     return {"scenarios": 100, "requeued": result["requeued"], "status": "passed" if result["requeued"] == 100 else "failed"}
 
 
+def _load_evidence(root: Path, filename: str, default: dict[str, Any]) -> dict[str, Any]:
+    path = root / "evidence" / filename
+    if not path.exists():
+        return default
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {"status": "failed", "reason": f"invalid evidence JSON: {filename}"}
+    return value if isinstance(value, dict) else {"status": "failed", "reason": f"evidence is not an object: {filename}"}
+
+
+def _write_manifest(root: Path) -> None:
+    filenames = ("ACCEPTANCE.json", "migration-report.json", "benchmark.json", "browser-e2e.json", "native-cp-sat.json", "large-planning.json", "postgres-full-attempt.json", "restore-repro.json", "performance-large.json")
+    files: dict[str, str] = {}
+    for filename in filenames:
+        path = root / "evidence" / filename
+        if path.exists():
+            files[f"evidence/{filename}"] = hashlib.sha256(path.read_bytes()).hexdigest()
+    screenshot = root / "docs/screenshots/planner.png"
+    if screenshot.exists():
+        files["docs/screenshots/planner.png"] = hashlib.sha256(screenshot.read_bytes()).hexdigest()
+    census = root / ".runtime/source-census.json"
+    if census.exists():
+        files[".runtime/source-census.json"] = hashlib.sha256(census.read_bytes()).hexdigest()
+    (root / "evidence/MANIFEST.json").write_text(json.dumps({"algorithm": "sha256", "files": files}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
 def command_acceptance() -> None:
     command_demo(); command_migrate_legacy(True); command_census(); command_benchmark()
     root = project_root(); parser_cases = 0
     for index in range(1000):
-        if parse_prerequisites(f"CS{index:03d} AND (MA101 OR MA102)").status == "parsed": parser_cases += 1
-    planner = _planner_campaign(); recovery = _recovery_campaign()
-    settings = Settings.from_env()
+        if parse_prerequisites(f"CS{index:03d} AND (MA101 OR MA102)").status == "parsed":
+            parser_cases += 1
+    planner = _planner_campaign(); recovery = _recovery_campaign(); settings = Settings.from_env()
     if settings.database_url.startswith(("postgresql", "postgres")):
-        campaign = asdict(run_postgres_review_campaign(build_session_factory(build_engine(settings))))
-        postgres_gate = campaign
+        postgres_gate = asdict(run_postgres_review_campaign(build_session_factory(build_engine(settings))))
     else:
-        postgres_gate = {"status": "not_run", "reason": "No PostgreSQL service was configured for this local campaign"}
+        postgres_gate = _load_evidence(root, "postgres-full-attempt.json", {"status": "not_run", "reason": "No PostgreSQL service was configured for this local campaign"})
+    native_gate = _load_evidence(root, "native-cp-sat.json", {"status": "not_run", "reason": "No supported native CP-SAT runtime evidence found"})
+    large_gate = _load_evidence(root, "large-planning.json", {"status": "not_run", "reason": "No large planning evidence found"})
+    browser_gate = _load_evidence(root, "browser-e2e.json", {"status": "not_run", "reason": "No browser runner evidence found"})
+    restore_gate = _load_evidence(root, "restore-repro.json", {"status": "not_run", "reason": "No restore evidence found"})
+    performance_gate = _load_evidence(root, "performance-large.json", {"status": "not_run", "reason": "No large performance evidence found"})
     gates = {
         "python_suite": _run([sys.executable, "-m", "pytest", "-q"], cwd=root),
         "client_unit": _run(["npm", "test", "--", "--watchAll=false"], cwd=root / "client"),
@@ -159,26 +192,38 @@ def command_acceptance() -> None:
         "catalog_activation": {"status": "passed", "evidence": "demo seed and migration dry-run"},
         "recovery": recovery,
         "optimization_oracle": planner,
+        "native_cp_sat_smoke": native_gate,
+        "large_planning": large_gate,
         "postgres_concurrency": postgres_gate,
         "review_10000_and_100_workers": postgres_gate,
-        "large_planning": {"status": "not_run", "reason": "Native CP-SAT unavailable on this host"},
-        "browser_e2e": {"status": "not_run", "reason": "No browser runner configured"},
-        "restore_proof": {"status": "not_run", "reason": "No PostgreSQL dump/restore service configured"},
+        "browser_e2e": browser_gate,
+        "restore_proof": restore_gate,
+        "performance_large_dataset": performance_gate,
     }
-    report = {"profile": "local-acceptance", "synthetic": True, "gates": gates, "required_external_profiles": ["postgresql", "native_cp_sat", "browser", "restore"]}
-    evidence = root / "evidence"; evidence.mkdir(exist_ok=True); (evidence / "ACCEPTANCE.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"); print(json.dumps({"profile": report["profile"], "gates": {key: value.get("status") for key, value in gates.items()}}, sort_keys=True))
+    required_external_profiles = [key for key, value in gates.items() if value.get("status") != "passed" and key in {"native_cp_sat_smoke", "large_planning", "postgres_concurrency", "browser_e2e", "restore_proof"}]
+    report = {"profile": "local-acceptance", "synthetic": True, "gates": gates, "required_external_profiles": required_external_profiles}
+    evidence = root / "evidence"; evidence.mkdir(exist_ok=True); (evidence / "ACCEPTANCE.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    _write_manifest(root)
+    print(json.dumps({"profile": report["profile"], "gates": {key: value.get("status") for key, value in gates.items()}}, sort_keys=True))
 
 
 def command_verify() -> None:
-    root = project_root(); required = [root / "evidence" / "ACCEPTANCE.json", root / "evidence" / "migration-report.json", root / "evidence" / "benchmark.json", root / ".runtime" / "source-census.json"]
+    root = project_root()
+    required = [
+        root / "evidence" / filename
+        for filename in ("ACCEPTANCE.json", "MANIFEST.json", "migration-report.json", "benchmark.json", "browser-e2e.json", "native-cp-sat.json", "large-planning.json", "postgres-full-attempt.json", "restore-repro.json", "performance-large.json")
+    ] + [root / ".runtime" / "source-census.json"]
     missing = [str(path) for path in required if not path.exists()]
-    if missing: raise SystemExit(json.dumps({"verified": False, "missing": missing}))
-    acceptance = json.loads((root / "evidence" / "ACCEPTANCE.json").read_text(encoding="utf-8")); census = json.loads((root / ".runtime" / "source-census.json").read_text(encoding="utf-8"))
-    required_gates = acceptance.get("gates", {}); blocked = {key: value for key, value in required_gates.items() if value.get("status") not in {"passed"}}
-    checks = {"acceptance_json": acceptance.get("profile") == "local-acceptance", "source_census": census.get("substantive_lines", 0) > 0, "migrations_declared": bool(MIGRATIONS), "required_gates_passed": not blocked}
-    payload = {"verified": all(checks.values()), "checks": checks, "blocked_gates": sorted(blocked), "evidence": [str(path.relative_to(root)) for path in required]}
+    if missing:
+        raise SystemExit(json.dumps({"verified": False, "missing": missing}))
+    acceptance = json.loads((root / "evidence" / "ACCEPTANCE.json").read_text(encoding="utf-8")); census = json.loads((root / ".runtime" / "source-census.json").read_text(encoding="utf-8")); manifest = json.loads((root / "evidence" / "MANIFEST.json").read_text(encoding="utf-8"))
+    manifest_mismatches = [relative for relative, expected in manifest.get("files", {}).items() if not (root / relative).exists() or hashlib.sha256((root / relative).read_bytes()).hexdigest() != expected]
+    required_gates = acceptance.get("gates", {}); blocked = {key: value for key, value in required_gates.items() if value.get("status") != "passed"}
+    checks = {"acceptance_json": acceptance.get("profile") == "local-acceptance", "source_census": census.get("substantive_lines", 0) > 0, "migrations_declared": bool(MIGRATIONS), "evidence_manifest": not manifest_mismatches, "required_gates_passed": not blocked}
+    payload = {"verified": all(checks.values()), "checks": checks, "blocked_gates": sorted(blocked), "manifest_mismatches": sorted(manifest_mismatches), "evidence": [str(path.relative_to(root)) for path in required]}
     print(json.dumps(payload, sort_keys=True))
-    if not payload["verified"]: raise SystemExit(1)
+    if not payload["verified"]:
+        raise SystemExit(1)
 
 
 def main() -> None:

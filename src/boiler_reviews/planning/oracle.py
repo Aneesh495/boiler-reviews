@@ -34,7 +34,7 @@ def enumerate_optimum(request: PlanRequest, *, max_assignments: int = 100_000) -
     checked = 0
     for values in product(*choices):
         checked += 1
-        assignment = dict(zip(codes, values))
+        assignment = dict(zip(codes, values, strict=False))
         result: ValidationResult = validate_plan(request, assignment)
         if result.valid:
             score = objective_value(request, assignment)

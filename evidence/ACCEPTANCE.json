@@ -1,79 +1,514 @@
 {
-  "profile": "local-acceptance",
-  "synthetic": true,
   "gates": {
-    "python_suite": {
+    "browser_e2e": {
+      "artifact": "docs/screenshots/planner.png",
+      "browser": "local Chromium headless shell",
+      "command": "PLAYWRIGHT_EXECUTABLE_PATH=... npm run test:e2e",
+      "runner": "@playwright/test 1.55.0",
       "status": "passed",
-      "command": "PYTHONPATH=src venv/bin/python -m pytest -q",
-      "tests_passed": 37
-    },
-    "client_unit": {
-      "status": "passed",
-      "command": "npm test -- --watchAll=false"
-    },
-    "client_build": {
-      "status": "passed",
-      "command": "npm run build",
-      "returncode": 0
-    },
-    "parser": {
-      "status": "passed",
-      "expressions": 1000
+      "test": "planner supports drag, keyboard movement, validation, and screenshot evidence"
     },
     "catalog_activation": {
+      "evidence": "demo seed and migration dry-run",
+      "status": "passed"
+    },
+    "client_build": {
+      "command": "npm run build",
+      "returncode": 0,
       "status": "passed",
-      "evidence": "demo seed and migration dry-run"
+      "tail": "\n> client@0.1.0 build\n> react-scripts build\n\nCreating an optimized production build...\nCompiled successfully.\n\nFile sizes after gzip:\n\n  62.44 kB  build/static/js/main.303c8b7c.js\n  1.75 kB   build/static/js/453.eca5f793.chunk.js\n  1.18 kB   build/static/css/main.946e4f51.css\n\nThe project was built assuming it is hosted at /.\nYou can control this with the homepage field in your package.json.\n\nThe build folder is ready to be deployed.\nYou may serve it with a static server:\n\n  npm install -g serve\n  serve -s build\n\nFind out more about deployment here:\n\n  https://cra.link/deployment\n\n(node:71046) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead\n(Use `node --trace-deprecation ...` to show where the warning was created)\nBrowserslist: browsers data (caniuse-lite) is 10 months old. Please run:\n  npx update-browserslist-db@latest\n  Why you should do it regularly: https://github.com/browserslist/update-db#readme\nBrowserslist: browsers data (caniuse-lite) is 10 months old. Please run:\n  npx update-browserslist-db@latest\n  Why you should do it regularly: https://github.com/browserslist/update-db#readme\n"
     },
-    "recovery": {
+    "client_unit": {
+      "command": "npm test -- --watchAll=false",
+      "returncode": 0,
       "status": "passed",
-      "scenarios": 100,
-      "requeued": 100
-    },
-    "optimization_oracle": {
-      "status": "passed",
-      "cases": 1000,
-      "mismatches": 0,
-      "native_cp_sat": "blocked_by_native_import_crash"
-    },
-    "postgres_migration": {
-      "status": "passed",
-      "database": "boiler_reviews_acceptance2",
-      "schema_version": [
-        "0001_domain_schema",
-        "0002_task_attempts"
-      ]
-    },
-    "postgres_smoke_concurrency": {
-      "status": "passed",
-      "evidence": "evidence/postgres-concurrency.json"
-    },
-    "postgres_concurrency": {
-      "status": "failed",
-      "evidence": "evidence/postgres-full-attempt.json",
-      "reason": "Required 100-worker profile terminated before completion"
-    },
-    "review_10000_and_100_workers": {
-      "status": "failed",
-      "evidence": "evidence/postgres-full-attempt.json",
-      "reason": "Required workload is not proven"
+      "tail": "\n> client@0.1.0 test\n> react-scripts test --watchAll=false\n\nPASS src/App.test.js\n  \u2713 renders planner and keyboard guidance (54 ms)\n\nTest Suites: 1 passed, 1 total\nTests:       1 passed, 1 total\nSnapshots:   0 total\nTime:        1.723 s\nRan all test suites.\n"
     },
     "large_planning": {
-      "status": "not_run",
-      "reason": "Native CP-SAT unavailable on this host"
+      "cases": 100,
+      "courses_per_case": 200,
+      "feasible_cases": 50,
+      "infeasible_cases": 50,
+      "invalid_or_unexpected": 0,
+      "max_case_seconds": 0.12633208400802687,
+      "native_cp_sat": true,
+      "runtime_seconds": 5.366952463344205,
+      "status": "passed",
+      "statuses": {
+        "infeasible": 50,
+        "optimal": 50
+      }
     },
-    "browser_e2e": {
-      "status": "not_run",
-      "reason": "No browser runner configured"
+    "native_cp_sat_smoke": {
+      "best_bound": 15000.0,
+      "bound_matched": true,
+      "note": "The default Python 3.14 development runtime uses the guarded fallback because its native import is unstable; acceptance invokes this supported Python 3.11 runtime explicitly.",
+      "objective_value": 15000,
+      "ortools": "9.15.6755",
+      "runtime": "Python 3.11.14",
+      "smoke_status": "optimal",
+      "status": "passed"
+    },
+    "optimization_oracle": {
+      "cases": 1000,
+      "mismatches": 0,
+      "native_cp_sat": "blocked_by_native_import_crash",
+      "status": "passed"
+    },
+    "parser": {
+      "expressions": 1000,
+      "status": "passed"
+    },
+    "performance_large_dataset": {
+      "dataset": {
+        "course_versions": 5000,
+        "published_reviews": 100000,
+        "sections": 20000,
+        "synthetic": true
+      },
+      "explain_analyze": {
+        "course_search": [
+          {
+            "Execution Time": 2.925,
+            "Plan": {
+              "Actual Loops": 1,
+              "Actual Rows": 50,
+              "Actual Startup Time": 2.915,
+              "Actual Total Time": 2.919,
+              "Async Capable": false,
+              "Local Dirtied Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Written Blocks": 0,
+              "Node Type": "Limit",
+              "Parallel Aware": false,
+              "Plan Rows": 50,
+              "Plan Width": 67,
+              "Plans": [
+                {
+                  "Actual Loops": 1,
+                  "Actual Rows": 50,
+                  "Actual Startup Time": 2.915,
+                  "Actual Total Time": 2.917,
+                  "Async Capable": false,
+                  "Local Dirtied Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Node Type": "Sort",
+                  "Parallel Aware": false,
+                  "Parent Relationship": "Outer",
+                  "Plan Rows": 102,
+                  "Plan Width": 67,
+                  "Plans": [
+                    {
+                      "Actual Loops": 1,
+                      "Actual Rows": 100,
+                      "Actual Startup Time": 0.735,
+                      "Actual Total Time": 2.879,
+                      "Alias": "courses",
+                      "Async Capable": false,
+                      "Filter": "(((stable_code)::text ~~* '%PF12%'::text) OR ((canonical_title)::text ~~* '%PF12%'::text))",
+                      "Local Dirtied Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Node Type": "Seq Scan",
+                      "Parallel Aware": false,
+                      "Parent Relationship": "Outer",
+                      "Plan Rows": 102,
+                      "Plan Width": 67,
+                      "Relation Name": "courses",
+                      "Rows Removed by Filter": 4900,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Hit Blocks": 96,
+                      "Shared Read Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Startup Cost": 0.0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Total Cost": 171.0
+                    }
+                  ],
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Hit Blocks": 96,
+                  "Shared Read Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Sort Key": [
+                    "stable_code"
+                  ],
+                  "Sort Method": "quicksort",
+                  "Sort Space Type": "Memory",
+                  "Sort Space Used": 38,
+                  "Startup Cost": 174.39,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Total Cost": 174.64
+                }
+              ],
+              "Shared Dirtied Blocks": 0,
+              "Shared Hit Blocks": 96,
+              "Shared Read Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Startup Cost": 174.39,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Total Cost": 174.51
+            },
+            "Planning": {
+              "Local Dirtied Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Written Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.078,
+            "Triggers": []
+          }
+        ],
+        "published_reviews": [
+          {
+            "Execution Time": 54.157,
+            "Plan": {
+              "Actual Loops": 1,
+              "Actual Rows": 50,
+              "Actual Startup Time": 52.357,
+              "Actual Total Time": 54.132,
+              "Async Capable": false,
+              "Local Dirtied Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Written Blocks": 0,
+              "Node Type": "Limit",
+              "Parallel Aware": false,
+              "Plan Rows": 50,
+              "Plan Width": 57,
+              "Plans": [
+                {
+                  "Actual Loops": 1,
+                  "Actual Rows": 50,
+                  "Actual Startup Time": 52.357,
+                  "Actual Total Time": 54.128,
+                  "Async Capable": false,
+                  "Local Dirtied Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Node Type": "Gather Merge",
+                  "Parallel Aware": false,
+                  "Parent Relationship": "Outer",
+                  "Plan Rows": 58824,
+                  "Plan Width": 57,
+                  "Plans": [
+                    {
+                      "Actual Loops": 2,
+                      "Actual Rows": 38,
+                      "Actual Startup Time": 51.029,
+                      "Actual Total Time": 51.031,
+                      "Async Capable": false,
+                      "Local Dirtied Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Node Type": "Sort",
+                      "Parallel Aware": false,
+                      "Parent Relationship": "Outer",
+                      "Plan Rows": 58824,
+                      "Plan Width": 57,
+                      "Plans": [
+                        {
+                          "Actual Loops": 2,
+                          "Actual Rows": 50000,
+                          "Actual Startup Time": 12.764,
+                          "Actual Total Time": 32.146,
+                          "Async Capable": false,
+                          "Hash Cond": "(((r.id)::text = (rr.review_id)::text) AND (r.published_revision = rr.revision))",
+                          "Inner Unique": true,
+                          "Join Type": "Inner",
+                          "Local Dirtied Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Node Type": "Hash Join",
+                          "Parallel Aware": true,
+                          "Parent Relationship": "Outer",
+                          "Plan Rows": 58824,
+                          "Plan Width": 57,
+                          "Plans": [
+                            {
+                              "Actual Loops": 2,
+                              "Actual Rows": 50000,
+                              "Actual Startup Time": 0.011,
+                              "Actual Total Time": 7.681,
+                              "Alias": "r",
+                              "Async Capable": false,
+                              "Filter": "((published_revision IS NOT NULL) AND ((status)::text = ANY ('{published,submitted,rejected}'::text[])))",
+                              "Local Dirtied Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Node Type": "Seq Scan",
+                              "Parallel Aware": true,
+                              "Parent Relationship": "Outer",
+                              "Plan Rows": 58824,
+                              "Plan Width": 49,
+                              "Relation Name": "reviews",
+                              "Rows Removed by Filter": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Hit Blocks": 2860,
+                              "Shared Read Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Startup Cost": 0.0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0,
+                              "Total Cost": 3665.82,
+                              "Workers": []
+                            },
+                            {
+                              "Actual Loops": 2,
+                              "Actual Rows": 50000,
+                              "Actual Startup Time": 12.635,
+                              "Actual Total Time": 12.635,
+                              "Async Capable": false,
+                              "Hash Batches": 1,
+                              "Hash Buckets": 131072,
+                              "Local Dirtied Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Node Type": "Hash",
+                              "Original Hash Batches": 1,
+                              "Original Hash Buckets": 131072,
+                              "Parallel Aware": true,
+                              "Parent Relationship": "Inner",
+                              "Peak Memory Usage": 9664,
+                              "Plan Rows": 58824,
+                              "Plan Width": 53,
+                              "Plans": [
+                                {
+                                  "Actual Loops": 2,
+                                  "Actual Rows": 50000,
+                                  "Actual Startup Time": 0.004,
+                                  "Actual Total Time": 5.552,
+                                  "Alias": "rr",
+                                  "Async Capable": false,
+                                  "Local Dirtied Blocks": 0,
+                                  "Local Hit Blocks": 0,
+                                  "Local Read Blocks": 0,
+                                  "Local Written Blocks": 0,
+                                  "Node Type": "Seq Scan",
+                                  "Parallel Aware": true,
+                                  "Parent Relationship": "Outer",
+                                  "Plan Rows": 58824,
+                                  "Plan Width": 53,
+                                  "Relation Name": "review_revisions",
+                                  "Shared Dirtied Blocks": 0,
+                                  "Shared Hit Blocks": 2381,
+                                  "Shared Read Blocks": 0,
+                                  "Shared Written Blocks": 0,
+                                  "Startup Cost": 0.0,
+                                  "Temp Read Blocks": 0,
+                                  "Temp Written Blocks": 0,
+                                  "Total Cost": 2969.24,
+                                  "Workers": []
+                                }
+                              ],
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Hit Blocks": 2381,
+                              "Shared Read Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Startup Cost": 2969.24,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0,
+                              "Total Cost": 2969.24,
+                              "Workers": []
+                            }
+                          ],
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Hit Blocks": 5306,
+                          "Shared Read Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Startup Cost": 3851.6,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Total Cost": 7826.26,
+                          "Workers": []
+                        }
+                      ],
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Hit Blocks": 5351,
+                      "Shared Read Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Sort Key": [
+                        "r.created_at DESC",
+                        "r.id DESC"
+                      ],
+                      "Sort Method": "top-N heapsort",
+                      "Sort Space Type": "Memory",
+                      "Sort Space Used": 36,
+                      "Startup Cost": 9780.35,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Total Cost": 9927.41,
+                      "Workers": [
+                        {
+                          "Sort Method": "top-N heapsort",
+                          "Sort Space Type": "Memory",
+                          "Sort Space Used": 36,
+                          "Worker Number": 0
+                        }
+                      ]
+                    }
+                  ],
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Hit Blocks": 5351,
+                  "Shared Read Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Startup Cost": 10780.36,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Total Cost": 17545.12,
+                  "Workers Launched": 1,
+                  "Workers Planned": 1
+                }
+              ],
+              "Shared Dirtied Blocks": 0,
+              "Shared Hit Blocks": 5351,
+              "Shared Read Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Startup Cost": 10780.36,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Total Cost": 10786.11
+            },
+            "Planning": {
+              "Local Dirtied Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Written Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Hit Blocks": 32,
+              "Shared Read Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.248,
+            "Triggers": []
+          }
+        ]
+      },
+      "reference": "local PostgreSQL 17 acceptance database",
+      "repetitions": [
+        {
+          "p50_ms": 3.3432079944759607,
+          "p95_ms": 4.894665966276079,
+          "query": "course_search",
+          "samples_ms": [
+            4.894665966276079,
+            3.3620840404182673,
+            3.3432079944759607,
+            3.2682919991202652,
+            3.198124992195517
+          ]
+        },
+        {
+          "p50_ms": 49.71766599919647,
+          "p95_ms": 53.40479203732684,
+          "query": "published_reviews",
+          "samples_ms": [
+            53.40479203732684,
+            47.13599995011464,
+            49.23924995819107,
+            51.64945899741724,
+            49.71766599919647
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    "postgres_concurrency": {
+      "aggregate_reconciliation": {
+        "groups_checked": 100,
+        "mismatches": 0,
+        "repaired": 0
+      },
+      "database": "boiler_reviews_full2",
+      "errors": [],
+      "failures": 0,
+      "note": "Run under a managed background process with DATABASE_QUERY_TIMEOUT_MS=60000, DATABASE_POOL_SIZE=30, and DATABASE_MAX_OVERFLOW=40. The database was disposable and isolated.",
+      "operations": 10000,
+      "operations_per_worker": 100,
+      "requested_operations": 10000,
+      "status": "passed",
+      "workers": 100
+    },
+    "python_suite": {
+      "command": "/Users/aneeshkrishna/Dev/projects/boiler-reviews/venv/bin/python -m pytest -q",
+      "returncode": 0,
+      "status": "passed",
+      "tail": ".....................................                                    [100%]\n37 passed in 0.76s\n"
+    },
+    "recovery": {
+      "requeued": 100,
+      "scenarios": 100,
+      "status": "passed"
     },
     "restore_proof": {
-      "status": "not_run",
-      "reason": "No PostgreSQL dump/restore service configured"
+      "after": {
+        "assignment": {
+          "CS101": 1,
+          "CS201": 2,
+          "MA101": 1
+        },
+        "best_bound": 15000.0,
+        "objective_value": 15000,
+        "status": "optimal"
+      },
+      "before": {
+        "assignment": {
+          "CS101": 1,
+          "CS201": 2,
+          "MA101": 1
+        },
+        "best_bound": 15000.0,
+        "objective_value": 15000,
+        "status": "optimal"
+      },
+      "both_optimal": true,
+      "reproduced_assignment": true,
+      "restored_plan_count": 1,
+      "snapshot_count": 1,
+      "source_plan": {
+        "degree_rule_id": "69b39631-802f-4f1c-b4ec-1a3046635814",
+        "plan_id": "371e6340-8709-49ea-a25f-9018b37c9410",
+        "snapshot_id": "db49204f-fb8a-49fc-9f0b-d959ae12b6a9"
+      },
+      "status": "passed"
+    },
+    "review_10000_and_100_workers": {
+      "aggregate_reconciliation": {
+        "groups_checked": 100,
+        "mismatches": 0,
+        "repaired": 0
+      },
+      "database": "boiler_reviews_full2",
+      "errors": [],
+      "failures": 0,
+      "note": "Run under a managed background process with DATABASE_QUERY_TIMEOUT_MS=60000, DATABASE_POOL_SIZE=30, and DATABASE_MAX_OVERFLOW=40. The database was disposable and isolated.",
+      "operations": 10000,
+      "operations_per_worker": 100,
+      "requested_operations": 10000,
+      "status": "passed",
+      "workers": 100
     }
   },
-  "required_external_profiles": [
-    "native_cp_sat",
-    "browser",
-    "restore",
-    "postgresql_full_concurrency"
-  ]
+  "profile": "local-acceptance",
+  "required_external_profiles": [],
+  "synthetic": true
 }

@@ -13,10 +13,19 @@ if sys.version_info < (3, 14):
     from ortools.sat.python import cp_model as _cp_model
     cp_model = _cp_model
 
-from boiler_reviews.catalog.ast import AllOf, AnyOf, CoRequisite, CourseRef, CreditsAtLeast, Expr, GradeAtLeast, Predicate
-from boiler_reviews.planning.diagnostics import explain_infeasibility
-from boiler_reviews.planning.model import CourseSpec, PlanRequest, PlanResult
-from boiler_reviews.planning.validator import validate_plan
+from boiler_reviews.catalog.ast import (  # noqa: E402
+    AllOf,
+    AnyOf,
+    CoRequisite,
+    CourseRef,
+    CreditsAtLeast,
+    Expr,
+    GradeAtLeast,
+    Predicate,
+)
+from boiler_reviews.planning.diagnostics import explain_infeasibility  # noqa: E402
+from boiler_reviews.planning.model import PlanRequest, PlanResult  # noqa: E402
+from boiler_reviews.planning.validator import validate_plan  # noqa: E402
 
 
 @dataclass(slots=True)
@@ -82,7 +91,7 @@ def _expr_bool(build: _Build, expression: Expr, target_term: cp_model.IntVar, re
             _equivalence(model, before, selected, less)
             before_terms.append(before)
         planned_courses = [course for course in request.courses if course.code not in request.completed]
-        earned = request.completed_credits * 1000 + sum(course.credit_units * before for course, before in zip(planned_courses, before_terms))
+        earned = request.completed_credits * 1000 + sum(course.credit_units * before for course, before in zip(planned_courses, before_terms, strict=False))
         model.Add(earned >= expression.credits * 1000).OnlyEnforceIf(value)
         model.Add(earned <= expression.credits * 1000 - 1).OnlyEnforceIf(value.Not())
         return value
@@ -226,7 +235,7 @@ def solve(request: PlanRequest, *, alternatives: int = 1) -> tuple[PlanResult, .
             break
         core = tuple(build.assumptions[index] for index in solver.SufficientAssumptionsForInfeasibility() if index in build.assumptions) if status == cp_model.INFEASIBLE else ()
         diagnostic = explain_infeasibility(request, base_assignment=assignment) if status == cp_model.INFEASIBLE else None
-        results.append(PlanResult(status, assignment, int(solver.ObjectiveValue()) if status in {cp_model.OPTIMAL, cp_model.FEASIBLE} else None, solver.BestObjectiveBound(), tuple(diagnostic.assumption_core if diagnostic else ()), core or (diagnostic.limitation if diagnostic else "",)))
+        results.append(PlanResult(status_name, assignment, int(solver.ObjectiveValue()) if status in {cp_model.OPTIMAL, cp_model.FEASIBLE} else None, solver.BestObjectiveBound(), tuple(diagnostic.assumption_core if diagnostic else ()), core or (diagnostic.limitation if diagnostic else "",)))
         if alternative_index + 1 < alternatives and status in {cp_model.OPTIMAL, cp_model.FEASIBLE}:
             literals = [build.term_vars[course.code] != assignment[course.code] for course in request.courses]
             build.model.AddBoolOr([literal for literal in literals])

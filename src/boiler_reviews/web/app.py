@@ -4,30 +4,47 @@ import logging
 import os
 import secrets
 import time
+from collections.abc import Callable
 from functools import wraps
-from pathlib import Path
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 from flask import Flask, g, jsonify, render_template, request, session
 from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session
 
-from boiler_reviews.common.errors import ConflictError, DomainError, NotFoundError, PermissionDenied, ValidationError
+from boiler_reviews.common.errors import (
+    ConflictError,
+    DomainError,
+    NotFoundError,
+    PermissionDenied,
+    ValidationError,
+)
 from boiler_reviews.config import Settings, project_root
 from boiler_reviews.db.health import readiness
 from boiler_reviews.db.migrate import upgrade
-from boiler_reviews.db.models import Account, Course, CourseAggregate, Review, ReviewRevision, Term
+from boiler_reviews.db.models import Account, Course, CourseAggregate, Review, ReviewRevision
 from boiler_reviews.db.session import build_engine, build_session_factory, session_scope
 from boiler_reviews.identity.service import authenticate, register_account
 from boiler_reviews.ops.logging import Metrics, configure_logging
+from boiler_reviews.planning.api import plan_result_payload, request_from_json
 from boiler_reviews.planning.solver import solve
 from boiler_reviews.planning.validator import validate_plan
 from boiler_reviews.reviews.moderation import moderation_queue, report_review, vote_helpful
 from boiler_reviews.reviews.ranking import CourseCandidate, RankingPreferences, rank_courses
-from boiler_reviews.reviews.service import ReviewInput, create_review, edit_review, moderate_review, submit_review
+from boiler_reviews.reviews.service import (
+    ReviewInput,
+    create_review,
+    edit_review,
+    moderate_review,
+    submit_review,
+)
+from boiler_reviews.reviews.stats import course_statistics, reconcile
 from boiler_reviews.sections.api import meeting_from_json, option_from_json
-from boiler_reviews.sections.scheduler import Meeting, choose_sections, export_icalendar, validate_schedule
+from boiler_reviews.sections.scheduler import (
+    choose_sections,
+    export_icalendar,
+)
 
 F = TypeVar("F", bound=Callable[..., Any])
 

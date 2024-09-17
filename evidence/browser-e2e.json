@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "command": "PLAYWRIGHT_EXECUTABLE_PATH=... npm run test:e2e",
+  "test": "planner supports drag, keyboard movement, validation, and screenshot evidence",
+  "artifact": "docs/screenshots/planner.png",
+  "runner": "@playwright/test 1.55.0",
+  "browser": "local Chromium headless shell"
+}

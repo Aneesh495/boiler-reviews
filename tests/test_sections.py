@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from boiler_reviews.sections.scheduler import Meeting, SectionOption, choose_sections, export_icalendar, validate_schedule
+from boiler_reviews.sections.scheduler import (
+    Meeting,
+    SectionOption,
+    choose_sections,
+    export_icalendar,
+    validate_schedule,
+)
 
 
 def meeting(start, end, weekday=0, known=True):
