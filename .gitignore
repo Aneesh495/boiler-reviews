@@ -1,4 +1,6 @@
-# Python
+# Workspace-local Kiro metadata
+.kiro/
+
 __pycache__/
 *.py[cod]
 .pytest_cache/
