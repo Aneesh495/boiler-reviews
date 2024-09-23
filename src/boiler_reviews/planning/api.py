@@ -4,6 +4,7 @@ from typing import Any
 
 from boiler_reviews.catalog.ast import expr_from_dict
 from boiler_reviews.planning.model import CourseSpec, PlanRequest, RequirementGroup, TermSpec
+from boiler_reviews.planning.prechecks import precheck
 
 
 def request_from_json(payload: dict[str, Any]) -> PlanRequest:
@@ -60,3 +61,8 @@ def plan_result_payload(result: Any) -> dict[str, Any]:
         "assumption_core": list(result.assumption_core),
         "validator": None if validator is None else {"valid": validator.valid, "violations": list(validator.violations)},
     }
+
+
+def precheck_payload(request: PlanRequest) -> dict[str, Any]:
+    result = precheck(request)
+    return {"valid": result.valid, "failures": list(result.failures), "warnings": list(result.warnings)}

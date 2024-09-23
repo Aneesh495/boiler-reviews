@@ -21,6 +21,7 @@ from boiler_reviews.db.models import (
     ReviewRevision,
 )
 from boiler_reviews.identity.service import require_role
+from boiler_reviews.reviews.policy import assert_review_contribution_allowed
 from boiler_reviews.reviews.stats import adjust_aggregate, remove_empty_aggregate
 
 TRANSITIONS: dict[str, frozenset[str]] = {
@@ -78,6 +79,7 @@ def create_review(session: Session, *, actor_id: str, data: ReviewInput, idempot
             if existing.account_id != actor_id:
                 raise ConflictError("The idempotency key belongs to another account.")
             return existing
+    assert_review_contribution_allowed(session, account_id=actor_id, course_id=data.course_id, term_id=data.term_id)
     review = Review(
         account_id=actor_id,
         course_id=data.course_id,

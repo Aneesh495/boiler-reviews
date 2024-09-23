@@ -16,6 +16,7 @@ from typing import Any
 
 from sqlalchemy import select
 
+from boiler_reviews.catalog.adapters import load_catalog
 from boiler_reviews.catalog.parser import parse_prerequisites
 from boiler_reviews.catalog.service import activate_catalog, stage_catalog
 from boiler_reviews.config import Settings, project_root
@@ -49,6 +50,16 @@ def demo_catalog() -> dict[str, Any]:
 def paths() -> tuple[Path, Path]:
     root = project_root()
     return root / "evidence", root / ".runtime" / "backups" / "course_reviews-2026-10-01.sqlite"
+
+
+def command_import_catalog(path: str, format: str | None) -> None:
+    document, provenance = load_catalog(Path(path), format=format)
+    payload = document.model_dump(mode="json")
+    payload["provenance"] = {**payload.get("provenance", {}), **provenance.as_dict()}
+    settings = Settings.from_env(); engine = build_engine(settings); factory = build_session_factory(engine); upgrade(engine)
+    with session_scope(factory) as session:
+        snapshot, validation = stage_catalog(session, payload=payload)
+    print(json.dumps({"snapshot_id": snapshot.id, "version": snapshot.version, "validation": {"warnings": list(validation.warnings), "errors": list(validation.errors)}, "provenance": provenance.as_dict()}, sort_keys=True))
 
 
 def command_demo() -> None:
@@ -228,9 +239,9 @@ def command_verify() -> None:
 
 def main() -> None:
     configure_logging(); parser = argparse.ArgumentParser(description="Boiler Reviews operational commands"); sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("demo"); legacy = sub.add_parser("migrate-legacy"); legacy.add_argument("--dry-run", action="store_true"); recon = sub.add_parser("reconcile"); recon.add_argument("--repair", action="store_true")
+    sub.add_parser("demo"); catalog = sub.add_parser("import-catalog"); catalog.add_argument("path"); catalog.add_argument("--format", choices=["json", "csv"]); legacy = sub.add_parser("migrate-legacy"); legacy.add_argument("--dry-run", action="store_true"); recon = sub.add_parser("reconcile"); recon.add_argument("--repair", action="store_true")
     for name in ("census", "benchmark", "acceptance", "verify"): sub.add_parser(name)
-    args = parser.parse_args(); handlers = {"demo": command_demo, "migrate-legacy": lambda: command_migrate_legacy(args.dry_run), "reconcile": lambda: command_reconcile(args.repair), "census": command_census, "benchmark": command_benchmark, "acceptance": command_acceptance, "verify": command_verify}; handlers[args.command]()
+    args = parser.parse_args(); handlers = {"demo": command_demo, "import-catalog": lambda: command_import_catalog(args.path, args.format), "migrate-legacy": lambda: command_migrate_legacy(args.dry_run), "reconcile": lambda: command_reconcile(args.repair), "census": command_census, "benchmark": command_benchmark, "acceptance": command_acceptance, "verify": command_verify}; handlers[args.command]()
 
 
 if __name__ == "__main__":

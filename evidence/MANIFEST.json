@@ -1,10 +1,10 @@
 {
   "algorithm": "sha256",
   "files": {
-    ".runtime/source-census.json": "dd88cf0473904d822ece62e2680a8f2a039e14c89cfe426bece2fa86e302f7a9",
+    ".runtime/source-census.json": "f2174d6a10caa736994c2556cadd50940b3d11f3bb9923450fe05c3e5f9657b8",
     "docs/screenshots/planner.png": "0708aa2a241ec4d689f79a597fd6031645c4b7368a16fa84de398ca66c0c4e15",
-    "evidence/ACCEPTANCE.json": "e17db4f3541d5b44b305ac9f49fd4e4d651477a85eea5a94c55e7cc2f8b92edd",
-    "evidence/benchmark.json": "f692b50a6589358e9f6b66c6a622c75b048a3e6f885b6bf7217b55f884899e7f",
+    "evidence/ACCEPTANCE.json": "e60474b551610f72fb90a2f5fb994b57ae67128cae5a6b37bb6dee74ebfd5aca",
+    "evidence/benchmark.json": "e3f6df50acfe56a5da84690119e547ff40c96bb79e686108419294fca0277a96",
     "evidence/browser-e2e.json": "70f48a3026ab1681767bafd2e5908217d34fb9aa12bf2c963f7613b9a4f2990e",
     "evidence/large-planning.json": "77e0a56e5cf48dd1ea813c4f24e2fdc4b88bf819081ae483332b3c53a81fc4fc",
     "evidence/migration-report.json": "313abe51dd8d0bf97a1cb95aea8950bd03ed0b172cc9026a4c4c1e64bf7714ab",

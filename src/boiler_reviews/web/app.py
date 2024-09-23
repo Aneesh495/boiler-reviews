@@ -10,7 +10,7 @@ from typing import Any, TypeVar
 
 from flask import Flask, g, jsonify, render_template, request, session
 from flask_wtf.csrf import CSRFProtect
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from boiler_reviews.common.errors import (
@@ -24,13 +24,18 @@ from boiler_reviews.config import Settings, project_root
 from boiler_reviews.db.health import readiness
 from boiler_reviews.db.migrate import upgrade
 from boiler_reviews.db.models import Account, Course, CourseAggregate, Review, ReviewRevision
+from boiler_reviews.db.repositories import CourseRepository
 from boiler_reviews.db.session import build_engine, build_session_factory, session_scope
+from boiler_reviews.identity.rate_limit import TokenBucketLimiter
 from boiler_reviews.identity.service import authenticate, register_account
 from boiler_reviews.ops.logging import Metrics, configure_logging
-from boiler_reviews.planning.api import plan_result_payload, request_from_json
+from boiler_reviews.ops.prometheus import render_metrics
+from boiler_reviews.planning.alternatives import tradeoff_summary
+from boiler_reviews.planning.api import plan_result_payload, precheck_payload, request_from_json
 from boiler_reviews.planning.solver import solve
 from boiler_reviews.planning.validator import validate_plan
 from boiler_reviews.reviews.moderation import moderation_queue, report_review, vote_helpful
+from boiler_reviews.reviews.query import ReviewCursor, ReviewFilter, review_page
 from boiler_reviews.reviews.ranking import CourseCandidate, RankingPreferences, rank_courses
 from boiler_reviews.reviews.service import (
     ReviewInput,
@@ -41,6 +46,7 @@ from boiler_reviews.reviews.service import (
 )
 from boiler_reviews.reviews.stats import course_statistics, reconcile
 from boiler_reviews.sections.api import meeting_from_json, option_from_json
+from boiler_reviews.sections.linked import LinkedSectionGroup, validate_linked_sections
 from boiler_reviews.sections.scheduler import (
     choose_sections,
     export_icalendar,
@@ -74,6 +80,7 @@ def create_app(settings: Settings | None = None) -> Flask:
 
     logger = logging.getLogger("boiler_reviews.http")
     metrics = Metrics()
+    write_limiter = TokenBucketLimiter(capacity=60, refill_per_second=1.0)
     app.extensions["metrics"] = metrics
     configure_logging(os.getenv("LOG_LEVEL", "INFO"))
 
@@ -146,6 +153,11 @@ def create_app(settings: Settings | None = None) -> Flask:
     def metrics_endpoint() -> Any:
         return jsonify(metrics.snapshot())
 
+    @app.get("/metrics/prometheus")
+    def prometheus_metrics_endpoint() -> Any:
+        return app.response_class(render_metrics(metrics), mimetype="text/plain; version=0.0.4")
+
+    @app.get("/api/v1/csrf")
     def csrf_token() -> Any:
         from flask_wtf.csrf import generate_csrf
         return jsonify({"csrf_token": generate_csrf()})
@@ -193,17 +205,12 @@ def create_app(settings: Settings | None = None) -> Flask:
         page_size = min(max(int(request.args.get("page_size", "20")), 1), 100)
         query = (request.args.get("q") or "").strip()
         with session_scope(factory) as session_db:
-            statement = select(Course).order_by(Course.stable_code.asc())
-            if query:
-                pattern = f"%{query}%"
-                statement = statement.where((Course.stable_code.ilike(pattern)) | (Course.canonical_title.ilike(pattern)))
-            total = session_db.scalar(select(func.count()).select_from(statement.subquery())) or 0
-            rows = session_db.scalars(statement.offset((page - 1) * page_size).limit(page_size)).all()
+            result = CourseRepository(session_db).search(query, page=page, page_size=page_size)
             return jsonify({
-                "items": [_course_payload(row, session_db) for row in rows],
-                "page": page,
-                "page_size": page_size,
-                "total": total,
+                "items": [_course_payload(row, session_db) for row in result.items],
+                "page": result.page,
+                "page_size": result.page_size,
+                "total": result.total,
             })
 
     @app.get("/api/v1/courses/<course_id>")
@@ -216,22 +223,19 @@ def create_app(settings: Settings | None = None) -> Flask:
 
     @app.get("/api/v1/reviews")
     def reviews() -> Any:
-        page = max(int(request.args.get("page", "1")), 1)
         page_size = min(max(int(request.args.get("page_size", "20")), 1), 100)
+        filters = ReviewFilter(course_id=request.args.get("course_id"), term_id=request.args.get("term_id"), professor=request.args.get("professor"), min_overall=int(request.args["min_overall"]) if request.args.get("min_overall") else None, would_recommend=bool(int(request.args["would_recommend"])) if request.args.get("would_recommend") in {"0", "1"} else None)
+        cursor = ReviewCursor.decode(request.args.get("cursor"))
         with session_scope(factory) as session_db:
-            statement = (
-                select(Review, ReviewRevision)
-                .join(ReviewRevision, (ReviewRevision.review_id == Review.id) & (ReviewRevision.revision == Review.published_revision))
-                .where(Review.status.in_(["published", "submitted", "rejected"]), Review.published_revision.is_not(None))
-                .order_by(Review.created_at.desc(), Review.id.desc())
-            )
-            rows = session_db.execute(statement.offset((page - 1) * page_size).limit(page_size)).all()
-            total = session_db.scalar(select(func.count()).select_from(Review).where(Review.status.in_(["published", "submitted", "rejected"]), Review.published_revision.is_not(None))) or 0
-            return jsonify({"items": [_review_payload(review, revision) for review, revision in rows], "page": page, "page_size": page_size, "total": total})
+            page = review_page(session_db, filters=filters, cursor=cursor, page_size=page_size)
+            return jsonify({"items": list(page.items), "page_size": page_size, "total": page.total, "next_cursor": page.next_cursor})
 
     @app.post("/api/v1/reviews")
     @require_account
     def create_review_endpoint() -> Any:
+        decision = write_limiter.consume(g.account_id)
+        if not decision.allowed:
+            return jsonify({"error": {"code": "rate_limited", "message": "Too many review writes; retry later."}}), 429, {"Retry-After": str(decision.retry_after_seconds)}
         body = json_body()
         data = _review_input(body)
         with session_scope(factory) as session_db:
@@ -311,7 +315,7 @@ def create_app(settings: Settings | None = None) -> Flask:
         body = json_body()
         plan_request = request_from_json(body)
         results = solve(plan_request, alternatives=min(max(int(body.get("alternatives", 1)), 1), 5))
-        return jsonify({"results": [plan_result_payload(result) for result in results], "catalog_version": body.get("catalog_version"), "degree_rule_version": body.get("degree_rule_version")})
+        return jsonify({"results": [plan_result_payload(result) for result in results], "tradeoffs": tradeoff_summary(plan_request, results), "precheck": precheck_payload(plan_request), "catalog_version": body.get("catalog_version"), "degree_rule_version": body.get("degree_rule_version")})
 
     @app.post("/api/v1/plans/validate")
     @require_account
@@ -330,7 +334,9 @@ def create_app(settings: Settings | None = None) -> Flask:
         options = [option_from_json(item) for item in body.get("options", [])]
         blocked = tuple(meeting_from_json(item) for item in body.get("blocked", []))
         result = choose_sections(planned, options, blocked=blocked)
-        return jsonify({"status": result.status, "conflicts": list(result.conflicts), "unknown_meetings": list(result.unknown_meetings), "diagnostics": list(result.diagnostics), "selected": {code: _section_payload(option) for code, option in result.selected.items()}})
+        linked_groups = tuple(LinkedSectionGroup(str(item["group_id"]), str(item["course_code"]), tuple(str(value) for value in item.get("section_ids", [])), tuple(str(value) for value in item.get("required_kinds", []))) for item in body.get("linked_groups", []))
+        linked = validate_linked_sections(tuple(result.selected.values()), linked_groups)
+        return jsonify({"status": result.status if linked.valid else "invalid", "conflicts": list(result.conflicts), "unknown_meetings": list(result.unknown_meetings), "diagnostics": list(result.diagnostics) + list(linked.explanations), "linked": {"valid": linked.valid, "missing_groups": list(linked.missing_groups), "duplicate_groups": list(linked.duplicate_groups)}, "selected": {code: _section_payload(option) for code, option in result.selected.items()}})
 
     @app.post("/api/v1/schedules/calendar")
     @require_account
