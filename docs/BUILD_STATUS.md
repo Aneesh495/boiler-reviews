@@ -37,4 +37,4 @@ The repository has moved from the legacy single-module Flask/SQLite demo to a mo
 
 ## Closing status
 
-The implementation and local acceptance campaign are complete at this checkpoint. Remote pushes and public deployment remain separate actions and were not performed.
+All functional acceptance campaigns and evidence verification pass at this checkpoint. The private source census remains an explicit implementation-size gate tracked outside public project prose; the delivery is not called fully complete until that gate is satisfied without duplicated or unused code. Remote pushes and public deployment remain separate actions and were not performed.
