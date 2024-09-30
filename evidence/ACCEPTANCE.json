@@ -449,7 +449,7 @@
       "workers": 100
     },
     "python_suite": {
-      "command": "/Users/aneeshkrishna/Dev/projects/boiler-reviews/venv/bin/python -m pytest -q",
+      "command": "venv/bin/python -m pytest -q",
       "returncode": 0,
       "status": "passed",
       "tail": ".........................................                                [100%]\n41 passed in 0.74s\n"

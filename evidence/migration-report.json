@@ -14,6 +14,6 @@
     "reviews": 12,
     "semesters": 3
   },
-  "source": "/Users/aneeshkrishna/Dev/projects/boiler-reviews/.runtime/backups/course_reviews-2026-10-01.sqlite",
+  "source": ".runtime/backups/course_reviews-2026-10-01.sqlite",
   "unknown_authorship": 12
 }

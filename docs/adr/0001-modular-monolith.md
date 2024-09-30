@@ -1,7 +1,7 @@
 # ADR 0001: Keep execution in a modular monolith
 
 - Status: accepted
-- Date: 2026-10-01
+- Date: 2024-09-30
 
 ## Decision
 

@@ -1,7 +1,7 @@
 # ADR 0002: Keep approved review content while edits are pending
 
 - Status: accepted
-- Date: 2026-10-01
+- Date: 2024-09-30
 
 A published review edit creates a new numbered revision, changes the workflow state to `submitted`, and leaves `published_revision` pointing to the last approved content. Public reads and aggregate reconciliation include `published` and `submitted` records only when that pointer exists, and always join the pointer rather than the pending revision.
 
