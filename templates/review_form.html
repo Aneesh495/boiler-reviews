@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% if mode == "edit" %}
+  {% set page_title = "Edit Review" %}
+{% else %}
+  {% set page_title = "New Review" %}
+{% endif %}
+
+{% block title %}{{ page_title }} · BoilerCourse Reviews{% endblock %}
+
+{% block content %}
+  <div class="d-flex align-items-center justify-content-between mb-3 gap-2 flex-wrap">
+    <div>
+      <h2 class="mb-0">{{ page_title }}</h2>
+      <div class="text-muted">
+        {% if mode == "edit" %}
+          Update an existing review row in the database.
+        {% else %}
+          Insert a new review row in the database.
+        {% endif %}
+      </div>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('reviews_list') }}">Back to Reviews</a>
+  </div>
+
+  <form method="post" action="{{ action_url }}" class="card card-body">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Course</label>
+        <select name="course_id" class="form-select" required>
+          <option value="">Select a course...</option>
+          {% for c in courses %}
+            <option
+              value="{{ c.id }}"
+              {% if form_data.get('course_id','')|string == c.id|string %}selected{% endif %}
+            >
+              {{ c.course_code }} — {{ c.course_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Semester</label>
+        <select name="semester_id" class="form-select" required>
+          <option value="">Select a semester...</option>
+          {% for s in semesters %}
+            <option
+              value="{{ s.id }}"
+              {% if form_data.get('semester_id','')|string == s.id|string %}selected{% endif %}
+            >
+              {{ s.term }} {{ s.year }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Professor</label>
+        <input
+          type="text"
+          name="professor"
+          class="form-control"
+          required
+          value="{{ form_data.get('professor','') }}"
+          placeholder="e.g., Dr. Smith"
+        />
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Difficulty (1–5)</label>
+        <input
+          type="number"
+          name="difficulty_rating"
+          class="form-control"
+          required
+          min="1"
+          max="5"
+          value="{{ form_data.get('difficulty_rating','') }}"
+        />
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Workload (hrs)</label>
+        <input
+          type="number"
+          name="workload_hours"
+          class="form-control"
+          required
+          min="0"
+          value="{{ form_data.get('workload_hours','') }}"
+        />
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Overall (1–5)</label>
+        <input
+          type="number"
+          name="overall_rating"
+          class="form-control"
+          required
+          min="1"
+          max="5"
+          value="{{ form_data.get('overall_rating','') }}"
+        />
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Would recommend?</label>
+        <select name="would_recommend" class="form-select" required>
+          <option value="">Select...</option>
+          <option value="1" {% if form_data.get('would_recommend','') == '1' %}selected{% endif %}>Yes</option>
+          <option value="0" {% if form_data.get('would_recommend','') == '0' %}selected{% endif %}>No</option>
+        </select>
+      </div>
+
+      <div class="col-12">
+        <label class="form-label">Comment (optional)</label>
+        <textarea name="comment" class="form-control" rows="3" placeholder="Write a short comment...">{{ form_data.get('comment','') }}</textarea>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-4">
+      <button type="submit" class="btn btn-primary">
+        {% if mode == "edit" %}Save Changes{% else %}Create Review{% endif %}
+      </button>
+      <a class="btn btn-outline-secondary" href="{{ url_for('reviews_list') }}">Cancel</a>
+    </div>
+  </form>
+{% endblock %}
+
