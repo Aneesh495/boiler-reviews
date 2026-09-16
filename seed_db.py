@@ -72,7 +72,7 @@ def main() -> None:
                 5,
                 4,
                 1,
-                "Summer pace — stay on top of weekly SQL exercises.",
+                "Summer pace  -  stay on top of weekly SQL exercises.",
             ),
             (
                 course_id_by_code["ECE270"],
@@ -132,7 +132,7 @@ def main() -> None:
                 8,
                 2,
                 0,
-                "Exams were rough — drill past papers.",
+                "Exams were rough  -  drill past papers.",
             ),
             (
                 course_id_by_code["CS251"],
@@ -142,7 +142,7 @@ def main() -> None:
                 11,
                 4,
                 1,
-                "Projects are time-consuming but great for interview prep.",
+                "Projects are time-consuming but you learn the toolchain well.",
             ),
             (
                 course_id_by_code["CS251"],
