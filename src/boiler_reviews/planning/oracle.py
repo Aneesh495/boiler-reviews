@@ -17,20 +17,25 @@ class OracleResult:
 
 
 def objective_value(request: PlanRequest, assignment: dict[str, int]) -> int:
-    selected = [term for term in assignment.values() if term]
-    if not selected:
-        return 0
     if request.objective == "balanced_workload":
-        return -max(sum(course.workload_hours for course in request.courses if assignment.get(course.code) == term) for term in range(1, len(request.terms) + 1))
+        return max(
+            (sum(course.workload_hours for course in request.courses if assignment.get(course.code) == term.index) for term in request.terms),
+            default=0,
+        )
     if request.objective == "preference_satisfaction":
         return sum(course.preference_score for course in request.courses if assignment.get(course.code, 0))
-    return sum((len(request.terms) + 1 - term) for term in selected)
+    return sum(
+        (len(request.terms) + 1 - term) * course.credit_units
+        for course in request.courses
+        if (term := assignment.get(course.code))
+    )
 
 
 def enumerate_optimum(request: PlanRequest, *, max_assignments: int = 100_000) -> OracleResult:
     codes = [course.code for course in request.courses]
     choices = [tuple([0, *sorted(course.available_terms or {term.index for term in request.terms})]) for course in request.courses]
     best: tuple[int, dict[str, int]] | None = None
+    minimize = request.objective == "balanced_workload"
     checked = 0
     for values in product(*choices):
         checked += 1
@@ -38,7 +43,7 @@ def enumerate_optimum(request: PlanRequest, *, max_assignments: int = 100_000) -
         result: ValidationResult = validate_plan(request, assignment)
         if result.valid:
             score = objective_value(request, assignment)
-            if best is None or score > best[0]:
+            if best is None or (score < best[0] if minimize else score > best[0]):
                 best = (score, assignment)
         if checked >= max_assignments:
             return OracleResult(best is not None, None if best is None else best[1], None if best is None else best[0], checked, True)

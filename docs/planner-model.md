@@ -6,4 +6,6 @@ The planner uses fixed-point credit units: one catalog credit is 1,000 internal 
 
 Statuses are exact: `optimal` means CP-SAT proved the objective; `feasible` means a solution exists without an optimality proof; `infeasible` means the model proved no solution; `unknown` means the time limit ended without a proof or solution; and `invalid_model` means the request could not be represented safely. Every candidate is independently checked for credits, availability, prerequisites, co-requisites, and allocation. The checked alternative generator blocks prior assignments and returns another solve result, not a claimed exhaustive Pareto frontier.
 
+The default objective weights each selected course's earlier-term score by its credit units. The workload objective reports the largest per-term workload and minimizes that value. The bounded oracle and CP-SAT use the same score units and optimization direction.
+
 Pins are assumption literals so a proven infeasible model can expose the mapped pin core when CP-SAT supplies one. The user-facing diagnostic also tests one-at-a-time pin relaxations. Those suggestions are deliberately not called a minimal unsatisfiable core. A diagnostic limitation is returned when the core cannot explain a predicate or a structural rule.
