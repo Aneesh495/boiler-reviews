@@ -44,6 +44,7 @@ benchmark:
 	@$(PYTHON) -m boiler_reviews.cli benchmark
 
 acceptance:
+	@mkdir -p instance
 	@$(PYTHON) -m boiler_reviews.cli acceptance
 
 verify:
